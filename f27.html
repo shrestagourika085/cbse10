@@ -1,0 +1,1681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polynomial & Linear Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the graph container and inputs */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fc;
+            min-height: 100vh;
+        }
+        #graphCanvas, #linearGraphCanvas {
+            border: 1px solid #e0e0e0;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border-radius: 0.75rem; /* rounded-xl */
+        }
+        .tab-button {
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            border-radius: 0.5rem 0.5rem 0 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-content {
+            padding-top: 1.5rem;
+        }
+        /* Style for step-by-step output */
+        .step {
+            margin-bottom: 0.5rem;
+            padding-left: 1rem;
+            border-left: 3px solid #6366f1;
+        }
+        .step-title {
+            font-weight: 600;
+            color: #4338ca;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-blue': '#3b82f6',
+                        'primary-dark': '#1e293b',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto bg-white p-6 md:p-10 rounded-3xl shadow-2xl">
+        
+        <div class="mb-8 border-b border-gray-200 flex space-x-2 overflow-x-auto">
+            <button id="polyTabButton"
+                    onclick="switchTab('polynomialTab')"
+                    class="tab-button bg-primary-blue text-white shadow-lg whitespace-nowrap">
+                Polynomial Analyzer
+            </button>
+            <button id="linearTabButton"
+                    onclick="switchTab('linearTab')"
+                    class="tab-button bg-gray-100 text-gray-500 hover:bg-gray-200 whitespace-nowrap">
+                Linear Equations Analyzer
+            </button>
+        </div>
+
+        <div id="polynomialTab" class="tab-content">
+            <h1 class="text-4xl font-extrabold text-primary-dark mb-2 text-center">Polynomial Project Analyzer</h1>
+            <p class="text-center text-gray-500 mb-8">Explore the properties of any polynomial P(x).</p>
+
+            <div class="bg-gray-50 p-6 rounded-2xl shadow-inner mb-8">
+                <label for="polynomialInput" class="block text-lg font-medium text-gray-700 mb-3">
+                    Enter your Polynomial P(x):
+                </label>
+                <input type="text" id="polynomialInput"
+                       value="x^2 - 4x + 3"
+                       placeholder="e.g., 2x^3 - 5x + 1 or x^2 - 4x + k"
+                       oninput="analyzePolynomial()"
+                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-primary-blue focus:border-primary-blue transition duration-150 ease-in-out text-lg">
+                <button onclick="analyzePolynomial()"
+                        class="mt-4 w-full md:w-auto px-6 py-3 bg-primary-blue text-white font-semibold rounded-xl hover:bg-blue-600 transition duration-300 ease-in-out shadow-lg transform hover:scale-[1.01]">
+                    Analyze Polynomial
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                <div class="lg:col-span-2 space-y-8">
+                    <h2 class="text-2xl font-bold text-primary-dark mb-4 border-b pb-2">Analysis Results</h2>
+
+                    <div id="resultsDisplay" class="space-y-6">
+                        <div class="bg-indigo-50 p-5 rounded-xl shadow-md">
+                            <h3 class="text-xl font-semibold text-indigo-800 mb-3">1. Degree and Evaluation</h3>
+                            <p id="degreeResult" class="text-gray-700 text-lg mb-4">Run "Analyze Polynomial" to see the results.</p>
+
+                            <div class="flex items-center space-x-3">
+                                <label for="xValueInput" class="text-gray-600">Find P(x) at x=</label>
+                                <input type="number" id="xValueInput" value="2"
+                                       class="w-20 px-3 py-1 border border-gray-300 rounded-lg text-base" onchange="updateEvaluation()">
+                            </div>
+                            <p id="evaluationResult" class="text-green-700 font-medium mt-2">P(2) = ?</p>
+                        </div>
+
+                        <div class="bg-red-50 p-5 rounded-xl shadow-md">
+                            <h3 class="text-xl font-semibold text-red-800 mb-3">2. Zeros of the Polynomial</h3>
+                            <p id="zerosResult" class="text-gray-700 text-lg mb-4"></p>
+                            <p id="discriminantResult" class="text-gray-700 text-base italic"></p>
+                        </div>
+
+                        <div class="bg-yellow-50 p-5 rounded-xl shadow-md">
+                            <h3 class="text-xl font-semibold text-yellow-800 mb-3">3. Geometrical Meaning of Zeros</h3>
+                            <p id="geometricMeaning" class="text-gray-700 text-lg">
+                                The zeros of the polynomial P(x) are the x-coordinates of the points where the graph of y = P(x) intersects the x-axis.
+                                On the graph above, these are the points where the curve crosses the horizontal axis (y=0).
+                            </p>
+                        </div>
+
+                        <div class="bg-teal-50 p-5 rounded-xl shadow-md">
+                            <h3 class="text-xl font-semibold text-teal-800 mb-3">4. Zeros and Coefficients Relationship (Vieta's Formulas)</h3>
+                            <p id="relationshipResult" class="text-gray-700 text-lg"></p>
+                            <div id="relationshipDetails" class="mt-3 text-sm italic text-teal-700"></div>
+                            <p id="factorizationExplanation" class="mt-3 font-medium text-teal-800"></p>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 p-5 rounded-xl shadow-md">
+                        <h3 class="text-xl font-semibold text-blue-800 mb-3">5. X and Y Values Table</h3>
+                        <p class="text-gray-700 mb-3">A sample of P(x) values for plotting and observation (from x=-5 to x=5):</p>
+                        <div id="valueTableContainer" class="max-h-60 overflow-y-auto rounded-lg shadow-inner">
+                            </div>
+                    </div>
+
+                    <div class="bg-green-50 p-5 rounded-xl shadow-md">
+                        <h3 class="text-xl font-semibold text-green-800 mb-3">6. Geometrical Properties</h3>
+                        <p id="consistencyResult" class="text-gray-700 text-lg mb-2"></p>
+                        <p id="graphDependencyResult" class="text-gray-700 text-lg mb-2"></p>
+                        <p id="graphTypeResult" class="text-gray-700 text-lg mb-2"></p>
+                        <p id="yInterceptResult" class="text-gray-700 text-lg mb-2"></p>
+                        <p id="lineOfSymmetryResult" class="text-gray-700 text-lg mb-2"></p>
+                        <p id="graphIntersectionResult" class="text-gray-700 text-lg"></p>
+                    </div>
+
+                    <div class="bg-orange-50 p-5 rounded-xl shadow-md">
+                        <h3 class="text-xl font-semibold text-orange-800 mb-3">7. Roots, Distinct Count, and Nature</h3>
+                        <p id="rootsResult" class="text-gray-700 text-lg mb-2">The calculated roots (zeros) of the polynomial are: <span class="font-bold text-orange-700" id="calculatedRoots"></span></p>
+                        <p id="distinctCountResult" class="text-gray-700 text-lg mb-2">Distinct count of real roots: <span class="font-bold text-orange-700" id="distinctRealCount"></span></p>
+                        <p id="rootsNatureResult" class="text-gray-700 text-lg">Nature of the roots: <span class="font-bold text-orange-700" id="natureOfRoots"></span></p>
+                    </div>
+
+                    <div class="bg-pink-50 p-5 rounded-xl shadow-md">
+                        <h3 class="text-xl font-semibold text-pink-800 mb-3">8. Discriminant Analysis</h3>
+                        <p id="discriminantAnalysisResult" class="text-gray-700 text-lg mb-4">Discriminant ($\Delta$ or $D$): <span class="font-bold text-pink-700" id="currentDiscriminant"></span></p>
+                        
+                        <h4 class="font-medium text-pink-700 mb-2">Analysis on $D$:</h4>
+                        <ul class="list-disc list-inside text-sm text-gray-700 ml-4">
+                            <li>If $D > 0$: Roots are real and distinct.</li>
+                            <li>If $D = 0$: Roots are real and equal (coincident).</li>
+                            <li>If $D < 0$: Roots are imaginary/complex and non-real.</li>
+                        </ul>
+                        
+                    </div>
+
+                    <div class="bg-gray-200 p-5 rounded-xl shadow-md">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">9. Equation Solver (Step-by-Step)</h3>
+                        <p class="text-gray-700 mb-3">Detailed solution steps for finding the zeros of P(x) using normal simplification or the quadratic formula:</p>
+                        <div id="polynomialSolverSteps" class="space-y-3 p-3 bg-white rounded-lg border border-gray-300">
+                            <p class="text-sm italic text-gray-500">Run "Analyze Polynomial" to see the step-by-step solution.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-purple-50 p-5 rounded-xl shadow-md">
+                        <h3 class="text-xl font-semibold text-purple-800 mb-3">10. Form Quadratic Equation from Zeros</h3>
+                        <p class="text-gray-700 mb-4">If $\alpha$ and $\beta$ are the zeros, the equation is $x^2 - (\alpha + \beta)x + (\alpha \cdot \beta) = 0$.</p>
+
+                        <div class="grid grid-cols-2 gap-4 items-center">
+                            <label class="text-gray-600 text-right">Sum of Zeros ($\alpha + \beta$):</label>
+                            <input type="number" id="sumInput" value="4" class="px-3 py-1 border border-gray-300 rounded-lg text-base" oninput="formQuadraticEquation()">
+
+                            <label class="text-gray-600 text-right">Product of Zeros ($\alpha \cdot \beta$):</label>
+                            <input type="number" id="productInput" value="3" class="px-3 py-1 border border-gray-300 rounded-lg text-base" oninput="formQuadraticEquation()">
+                        </div>
+                        
+                        <button onclick="formQuadraticEquation()" class="mt-4 w-full px-4 py-2 bg-purple-600 text-white font-semibold rounded-xl hover:bg-purple-700 transition duration-300 shadow-md">
+                            Generate Equation
+                        </button>
+
+                        <p id="formedEquationResult" class="text-purple-800 font-bold mt-4 text-center text-xl"></p>
+                    </div>
+
+                    <div class="bg-yellow-100 p-5 rounded-xl shadow-md">
+                        <h3 class="text-xl font-semibold text-yellow-800 mb-3">11. Determine the position value of k of $ax^2 + bx + c = 0$</h3>
+                        <p class="text-gray-700 mb-4">This feature uses the $a, b, c$ values from the **Quadratic Equation Analyzer** section below as a template for $ax^2 + bx + c = 0$. We calculate $k$ under the condition of **Equal Roots** ($D=b^2-4ac=0$).</p>
+                        
+                        <div class="bg-white p-4 rounded-lg shadow-inner mb-3">
+                            <h4 class="font-medium text-yellow-700 mb-2">Solve for $k$ (as $a$)</h4>
+                            <div class="grid grid-cols-3 gap-2 items-center mb-2">
+                                <span class="text-center font-bold text-lg">k ($a$)</span>
+                                <input type="number" id="kAsA_bInput" value="4" placeholder="b value" class="px-2 py-1 border rounded-lg text-sm">
+                                <input type="number" id="kAsA_cInput" value="4" placeholder="c value" class="px-2 py-1 border rounded-lg text-sm">
+                            </div>
+                            <button onclick="solveKforA()" class="w-full px-4 py-2 bg-yellow-600 text-white font-semibold rounded-lg hover:bg-yellow-700 transition duration-300 text-sm">
+                                Calculate k
+                            </button>
+                            <p id="kAsA_result" class="text-yellow-800 font-bold mt-2 text-center text-md">k = ?</p>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-lg shadow-inner mb-3">
+                            <h4 class="font-medium text-yellow-700 mb-2">Solve for $k$ (as $b$)</h4>
+                            <div class="grid grid-cols-3 gap-2 items-center mb-2">
+                                <input type="number" id="kAsB_aInput" value="1" placeholder="a value" class="px-2 py-1 border rounded-lg text-sm">
+                                <span class="text-center font-bold text-lg">k ($b$)</span>
+                                <input type="number" id="kAsB_cInput" value="4" placeholder="c value" class="px-2 py-1 border rounded-lg text-sm">
+                            </div>
+                            <button onclick="solveKforB()" class="w-full px-4 py-2 bg-yellow-600 text-white font-semibold rounded-lg hover:bg-yellow-700 transition duration-300 text-sm">
+                                Calculate k
+                            </button>
+                            <p id="kAsB_result" class="text-yellow-800 font-bold mt-2 text-center text-md">k = ?</p>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-lg shadow-inner">
+                            <h4 class="font-medium text-yellow-700 mb-2">Solve for $k$ (as $c$)</h4>
+                            <div class="grid grid-cols-3 gap-2 items-center mb-2">
+                                <input type="number" id="kAsC_aInput" value="1" placeholder="a value" class="px-2 py-1 border rounded-lg text-sm">
+                                <input type="number" id="kAsC_bInput" value="4" placeholder="b value" class="px-2 py-1 border rounded-lg text-sm">
+                                <span class="text-center font-bold text-lg">k ($c$)</span>
+                            </div>
+                            <button onclick="solveKforC()" class="w-full px-4 py-2 bg-yellow-600 text-white font-semibold rounded-lg hover:bg-yellow-700 transition duration-300 text-sm">
+                                Calculate k
+                            </button>
+                            <p id="kAsC_result" class="text-yellow-800 font-bold mt-2 text-center text-md">k = ?</p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="lg:col-span-1 flex flex-col items-center">
+                    <h2 class="text-2xl font-bold text-primary-dark mb-4 border-b pb-2 w-full">Graphical Representation</h2>
+                    <canvas id="graphCanvas" width="400" height="400" class="w-full h-auto max-h-[400px]"></canvas>
+                </div>
+
+            </div>
+        </div>
+        
+        <div id="linearTab" class="tab-content hidden">
+            <h1 class="text-4xl font-extrabold text-primary-dark mb-2 text-center">Linear Equations Analyzer</h1>
+            <p class="text-center text-gray-500 mb-8">Solve and visualize systems of two linear equations.</p>
+
+            <div class="max-w-4xl mx-auto space-y-8 mt-10">
+                <h1 class="text-4xl font-extrabold text-primary-dark mb-2 text-center">Simultaneous Equations: Algebraic Methods</h1>
+                <p class="text-center text-gray-500 mb-8">Solve a pair of linear equations using Substitution, Elimination, and Cross-Multiplication methods.</p>
+
+                <div class="bg-gray-50 p-6 rounded-2xl shadow-inner mb-8">
+                    <h2 class="text-2xl font-bold text-primary-dark mb-4 border-b pb-2">Enter Equations ($a_1x + b_1y = c_1$)</h2>
+                    <div class="text-gray-700 mb-4 font-mono">
+                        Equation 1: $a_1x + b_1y = c_1$ <br>
+                        Equation 2: $a_2x + b_2y = c_2$
+                    </div>
+                    <div class="space-y-4 mb-4">
+                        <h4 class="font-medium text-gray-600">Equation 1 ($a_1, b_1, c_1$):</h4>
+                        <div class="grid grid-cols-3 gap-2">
+                            <input type="number" id="a1AlgInput" value="2" placeholder="a1" class="px-3 py-2 border rounded-lg">
+                            <input type="number" id="b1AlgInput" value="1" placeholder="b1" class="px-3 py-2 border rounded-lg">
+                            <input type="number" id="c1AlgInput" value="5" placeholder="c1" class="px-3 py-2 border rounded-lg">
+                        </div>
+                        
+                        <h4 class="font-medium text-gray-600">Equation 2 ($a_2, b_2, c_2$):</h4>
+                        <div class="grid grid-cols-3 gap-2">
+                            <input type="number" id="a2AlgInput" value="1" placeholder="a2" class="px-3 py-2 border rounded-lg">
+                            <input type="number" id="b2AlgInput" value="-3" placeholder="b2" class="px-3 py-2 border rounded-lg">
+                            <input type="number" id="c2AlgInput" value="-1" placeholder="c2" class="px-3 py-2 border rounded-lg">
+                        </div>
+                    </div>
+
+                    <button onclick="runAllAlgebraicMethods()"
+                            class="mt-4 w-full px-6 py-3 bg-primary-blue text-white font-semibold rounded-xl hover:bg-blue-600 transition duration-300 shadow-lg">
+                        Solve & Analyze
+                    </button>
+                </div>
+                
+                <div id="consistencyAnalysisSection" class="bg-green-50 p-6 rounded-2xl shadow-md">
+                    <h2 class="text-2xl font-bold text-green-800 mb-4 border-b pb-2">Solvability & Consistency Analysis</h2>
+                    <div id="consistencyResultOutput" class="text-green-700 font-bold text-xl mb-2 text-center">Click "Solve & Analyze" to determine consistency.</div>
+                    <div id="ratioComparison" class="text-gray-700 text-sm font-mono text-center mt-4"></div>
+                    
+                    <h3 class="text-lg font-semibold text-green-800 mt-4 mb-2">Conditions for Consistency:</h3>
+                    <ul class="list-disc list-inside text-gray-700 text-sm ml-4 space-y-1">
+                        <li>**Unique Solution (Intersecting Lines):** $\frac{a_1}{a_2} \neq \frac{b_1}{b_2}$</li>
+                        <li>**Infinite Solutions (Coincident Lines):** $\frac{a_1}{a_2} = \frac{b_1}{b_2} = \frac{c_1}{c_2}$</li>
+                        <li>**No Solution (Parallel Lines):** $\frac{a_1}{a_2} = \frac{b_1}{b_2} \neq \frac{c_1}{c_2}$</li>
+                    </ul>
+                </div>
+                <div id="analysisSection" class="bg-purple-50 p-6 rounded-2xl shadow-md">
+                    <h2 class="text-2xl font-bold text-purple-800 mb-4 border-b pb-2">Method Comparison & Final Solution</h2>
+                    <div id="finalSolutionResult" class="text-purple-700 font-bold text-2xl mb-6 text-center">Enter coefficients and click "Solve & Analyze".</div>
+                    <div id="methodAnalysisResult" class="text-gray-700">
+                        <h3 class="font-semibold text-xl text-purple-800 mt-2">Which Method is Easiest? (Analysis)</h3>
+                        <p class="mt-2 space-y-2">
+                            The **Elimination Method** is often considered the easiest and most practical, especially when coefficients are simple integers, as it's direct and avoids fractional arithmetic early on. The **Substitution Method** is easiest when one variable already has a coefficient of 1 or -1, making it simple to isolate. The **Cross-Multiplication Method** is a formulaic shortcut and is the fastest *if* the formula is memorized perfectly, but it is the most prone to sign errors if the formula is forgotten or misapplied.
+                        </p>
+                    </div>
+                </div>
+                <div class="bg-indigo-50 p-6 rounded-2xl shadow-md">
+                    <h2 class="text-2xl font-bold text-indigo-800 mb-4 border-b pb-2">1. Substitution Method (Step-by-Step)</h2>
+                    <div id="substitutionSolution" class="text-gray-700 font-normal text-base space-y-2">
+                        Click "Solve & Analyze" to see the solution steps.
+                    </div>
+                </div>
+                <div class="bg-red-50 p-6 rounded-2xl shadow-md">
+                    <h2 class="text-2xl font-bold text-red-800 mb-4 border-b pb-2">2. Elimination Method (Step-by-Step)</h2>
+                    <div id="eliminationSolution" class="text-gray-700 font-normal text-base space-y-2">
+                        Click "Solve & Analyze" to see the solution steps.
+                    </div>
+                </div>
+                <div class="bg-teal-50 p-6 rounded-2xl shadow-md">
+                    <h2 class="text-2xl font-bold text-teal-800 mb-4 border-b pb-2">3. Cross-Multiplication Method (Step-by-Step)</h2>
+                    <div id="crossMultiplicationSolution" class="text-gray-700 font-normal text-base space-y-2">
+                        Click "Solve & Analyze" to see the solution steps.
+                    </div>
+                </div>
+            </div>
+            <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10">
+                <div class="flex flex-col items-center">
+                    <h2 class="text-2xl font-bold text-primary-dark mb-4 border-b pb-2 w-full">Graphical Representation</h2>
+                    <canvas id="linearGraphCanvas" width="400" height="400" class="w-full h-auto max-h-[400px]"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div id="messageBox" class="mt-8 p-4 bg-red-100 text-red-700 rounded-xl hidden"></div>
+    </div>
+    
+    <script>
+        // --- DOM References ---
+        const canvas = document.getElementById('graphCanvas');
+        const ctx = canvas.getContext('2d');
+        const linearGraphCanvas = document.getElementById('linearGraphCanvas');
+        const linearCtx = linearGraphCanvas.getContext('2d'); // NEW CONTEXT
+        const inputElement = document.getElementById('polynomialInput');
+        const xValueInput = document.getElementById('xValueInput');
+        const sumInput = document.getElementById('sumInput');
+        const productInput = document.getElementById('productInput');
+        
+        // Linear equation inputs
+        const a1AlgInput = document.getElementById('a1AlgInput');
+        const b1AlgInput = document.getElementById('b1AlgInput');
+        const c1AlgInput = document.getElementById('c1AlgInput');
+        const a2AlgInput = document.getElementById('a2AlgInput');
+        const b2AlgInput = document.getElementById('b2AlgInput');
+        const c2AlgInput = document.getElementById('c2AlgInput');
+
+        // --- Helper Functions ---
+
+        /**
+         * Cleans a polynomial string by handling implicit '1' coefficients,
+         * replacing 'k' with a placeholder, and ensuring proper format for parsing.
+         * @param {string} polyStr - The raw polynomial string.
+         * @param {number} kValue - The numeric value to substitute for 'k'.
+         * @returns {string} - The cleaned and normalized polynomial string.
+         */
+        function cleanPolynomial(polyStr, kValue = 0) {
+            let cleaned = polyStr.toLowerCase().replace(/\s/g, '');
+
+            // 1. Replace 'k' with its value (default 0 for initial parsing)
+            cleaned = cleaned.replace(/k/g, kValue.toString());
+
+            // 2. Insert '1' for implicit coefficients (e.g., 'x^2' -> '1x^2', '+x' -> '+1x')
+            cleaned = cleaned
+                .replace(/^x/, '1x') // Start of string 'x'
+                .replace(/\+x/g, '+1x') // '+x'
+                .replace(/-x/g, '-1x') // '-x'
+                .replace(/\^(\d+)/g, '^$1'); // Handles powers: x^2
+
+            return cleaned;
+        }
+        
+        /**
+         * Parses a cleaned polynomial string to extract coefficients and degree.
+         * @param {string} polyStr - The cleaned polynomial string.
+         * @returns {{coefficients: number[], degree: number, hasK: boolean, originalCoefficients: number[]}}
+         */
+        function parsePolynomial(polyStr) {
+            const originalPolyStr = document.getElementById('polynomialInput').value.toLowerCase().replace(/\s/g, '');
+            const hasK = originalPolyStr.includes('k');
+            
+            // Map: degree -> coefficient
+            const coeffMap = new Map();
+            let maxDegree = 0;
+
+            // Regex to find terms: (sign)(coefficient)x^(power) OR (sign)(constant)
+            const terms = polyStr.match(/([+-]?[0-9]*\.?[0-9]*)x(?:\^([0-9]+))?|([+-]?[0-9]+(?:\.[0-9]+)?)$/g) || [];
+
+            // Add leading term if not matched by the regex (e.g., "1x^2" or "-1x")
+            if (polyStr.match(/^[+-]?[0-9]*\.?[0-9]*x/)) {
+                // Prepend a "+" if the first term doesn't have a sign
+                const leadingTerm = polyStr.split(/([+-])/)[0].includes('x') ? polyStr.split(/[+-]/)[0] : '';
+                if (leadingTerm) {
+                    terms.unshift(leadingTerm);
+                }
+            }
+
+            let cleaned = originalPolyStr;
+
+            // Step 1: Handle terms with 'x' (including 'x^1' and 'x^0' implicit)
+            // Regex for terms with x: captures (sign and coeff) and (power)
+            // e.g., '1x^2', '-1x', '+3x^3'
+            const xTerms = cleaned.match(/([+-]?[0-9]*\.?[0-9]*)x(\^([0-9]+))?/g) || [];
+
+            xTerms.forEach(term => {
+                let coeffStr, degreeStr;
+                
+                // Remove 'x' and split based on '^'
+                let parts = term.replace('x', '').split('^');
+                
+                coeffStr = parts[0];
+                degreeStr = parts.length > 1 ? parts[1] : '1'; // Default degree is 1
+
+                let coeff = parseFloat(coeffStr) || (coeffStr === '-' ? -1 : (coeffStr === '' || coeffStr === '+' ? 1 : 0));
+                let degree = parseInt(degreeStr);
+
+                coeffMap.set(degree, (coeffMap.get(degree) || 0) + coeff);
+                maxDegree = Math.max(maxDegree, degree);
+            });
+
+            // Step 2: Handle constant term (x^0)
+            // Regex for constant: must be at the end, not followed by x
+            const constantMatch = cleaned.match(/([+-]?[0-9]+(?:\.[0-9]+)?)(?![x^])(?:\s*$)/);
+
+            if (constantMatch) {
+                let constant = parseFloat(constantMatch[1]);
+                coeffMap.set(0, (coeffMap.get(0) || 0) + constant);
+                maxDegree = Math.max(maxDegree, 0);
+            }
+            
+            // Re-run the constant check for 'k' to find the actual k coefficient
+            let kCoeff = 0;
+            if (hasK) {
+                 // Check if k is a standalone constant
+                const kConstantMatch = originalPolyStr.match(/([+-]?[0-9]*\.?[0-9]*)k(?!\^)/);
+                if (kConstantMatch) {
+                    let kCoeffStr = kConstantMatch[1] || '1';
+                    if (kCoeffStr === '+') kCoeffStr = '1';
+                    if (kCoeffStr === '-') kCoeffStr = '-1';
+                    kCoeff = parseFloat(kCoeffStr);
+                } else if (originalPolyStr.match(/k(?!\^)/)) {
+                    // standalone k
+                    kCoeff = 1;
+                }
+
+                // Check if k is a coefficient of a term (e.g., 2kx^2) - This is more complex and usually k is treated as the constant 'c'
+                // For simplicity as per typical curriculum examples, we focus on 'k' as the constant term (c).
+            }
+
+            // Step 3: Extract coefficients array and determine the degree
+            const coefficients = new Array(maxDegree + 1).fill(0);
+            const originalCoefficients = new Array(maxDegree + 1).fill(0);
+
+            for (let i = 0; i <= maxDegree; i++) {
+                coefficients[i] = coeffMap.get(i) || 0;
+                // If it's the constant term (degree 0) AND has k, the original constant is k
+                if (i === 0 && hasK) {
+                    originalCoefficients[i] = kCoeff; // Set the original coefficient to k's coefficient (usually 1 or the pre-k number)
+                } else {
+                    originalCoefficients[i] = coefficients[i];
+                }
+            }
+
+            // Reverse the array to go from highest degree to lowest (a_n, a_{n-1}, ..., a_0)
+            coefficients.reverse();
+            originalCoefficients.reverse();
+
+            // Correct degree calculation: find the highest non-zero coefficient index
+            let finalDegree = 0;
+            for (let i = 0; i < coefficients.length; i++) {
+                if (coefficients[i] !== 0) {
+                    finalDegree = coefficients.length - 1 - i;
+                    break;
+                }
+            }
+            
+            return {
+                coefficients: coefficients, // [a, b, c] for degree 2, where a*x^2 + b*x + c
+                degree: coefficients.length - 1,
+                hasK: hasK,
+                originalCoefficients: originalCoefficients // Used for k-solving if needed
+            };
+        }
+
+        /**
+         * Calculates the value of the polynomial P(x) for a given x.
+         * @param {number[]} coefficients - Array of coefficients [a_n, a_{n-1}, ..., a_0].
+         * @param {number} x - The value to evaluate the polynomial at.
+         * @returns {number} - The result P(x).
+         */
+        function evaluatePolynomial(coefficients, x) {
+            let result = 0;
+            const degree = coefficients.length - 1;
+            for (let i = 0; i <= degree; i++) {
+                // coefficients[i] is the coefficient for x^(degree - i)
+                result += coefficients[i] * Math.pow(x, degree - i);
+            }
+            return result;
+        }
+
+        /**
+         * Solves a quadratic equation (degree 2) using the quadratic formula.
+         * @param {number[]} coefficients - [a, b, c]
+         * @returns {{discriminant: number, roots: string[], solutionSteps: string[]}}
+         */
+        function solveQuadratic(coefficients) {
+            const [a, b, c] = coefficients;
+            const steps = [];
+
+            steps.push(`<div class="step"><span class="step-title">1. Standard Form</span>: $P(x) = ${formatPolynomial([a, b, c])} = 0$</div>`);
+            steps.push(`<div class="step"><span class="step-title">2. Identify Coefficients</span>: $a=${a}$, $b=${b}$, $c=${c}$</div>`);
+            
+            const D = b * b - 4 * a * c;
+            steps.push(`<div class="step"><span class="step-title">3. Calculate Discriminant ($D$)</span>: $D = b^2 - 4ac$</div>`);
+            steps.push(`<div class="step">Substitution: $D = (${b})^2 - 4(${a})(${c}) = ${b*b} - ${4*a*c} = ${D}$</div>`);
+
+            let roots = [];
+            let nature = '';
+            
+            if (D > 0) {
+                nature = 'real and distinct';
+                const sqrtD = Math.sqrt(D);
+                const x1 = (-b + sqrtD) / (2 * a);
+                const x2 = (-b - sqrtD) / (2 * a);
+                
+                roots.push(x1.toFixed(4).replace(/\.0+$/, ''));
+                roots.push(x2.toFixed(4).replace(/\.0+$/, ''));
+                
+                steps.push(`<div class="step"><span class="step-title">4. Apply Quadratic Formula</span>: $x = \\frac{-b \\pm \\sqrt{D}}{2a}$</div>`);
+                steps.push(`<div class="step">Since $D > 0$, there are two real and distinct roots.</div>`);
+                steps.push(`<div class="step">Root 1: $x_1 = \\frac{-(${b}) + \\sqrt{${D}}}{2(${a})} = \\frac{${-b} + ${sqrtD.toFixed(4)}}{${2*a}} \\approx ${roots[0]}$</div>`);
+                steps.push(`<div class="step">Root 2: $x_2 = \\frac{-(${b}) - \\sqrt{${D}}}{2(${a})} = \\frac{${-b} - ${sqrtD.toFixed(4)}}{${2*a}} \\approx ${roots[1]}$</div>`);
+
+            } else if (D === 0) {
+                nature = 'real and equal (coincident)';
+                const x = -b / (2 * a);
+                roots.push(x.toFixed(4).replace(/\.0+$/, ''));
+                
+                steps.push(`<div class="step"><span class="step-title">4. Apply Formula (for D=0)</span>: $x = \\frac{-b}{2a}$</div>`);
+                steps.push(`<div class="step">Since $D = 0$, there is one real, repeated root.</div>`);
+                steps.push(`<div class="step">Solution: $x = \\frac{-(${b})}{2(${a})} = ${x}$</div>`);
+            } else { // D < 0
+                nature = 'imaginary/complex and non-real';
+                const sqrtAbsD = Math.sqrt(Math.abs(D));
+                const realPart = -b / (2 * a);
+                const imagPart = sqrtAbsD / (2 * a);
+                
+                const formatComplex = (r, i, sign) => {
+                    const rF = realPart.toFixed(4).replace(/\.0+$/, '');
+                    const iF = Math.abs(imagPart).toFixed(4).replace(/\.0+$/, '');
+                    return `${rF} ${sign} ${iF}i`;
+                };
+
+                roots.push(formatComplex(realPart, imagPart, '+'));
+                roots.push(formatComplex(realPart, imagPart, '-'));
+                
+                steps.push(`<div class="step"><span class="step-title">4. Apply Quadratic Formula (for D<0)</span>: $x = \\frac{-b \\pm i\\sqrt{|D|}}{2a}$</div>`);
+                steps.push(`<div class="step">Since $D < 0$, the roots are complex.</div>`);
+                steps.push(`<div class="step">Solution: $x = \\frac{${-b} \\pm i\\sqrt{${Math.abs(D)}} }{${2*a}} = ${realPart.toFixed(4).replace(/\.0+$/, '')} \\pm ${Math.abs(imagPart).toFixed(4).replace(/\.0+$/, '')}i$</div>`);
+            }
+            
+            steps.push(`<div class="step"><span class="step-title">5. Final Solution</span>: The zeros are $x=${roots.join(' \\text{ and } x=')}$</div>`);
+
+            return {
+                discriminant: D,
+                roots: roots,
+                solutionSteps: steps,
+                nature: nature
+            };
+        }
+        
+        /**
+         * Formats the coefficients back into a human-readable polynomial string.
+         * @param {number[]} coefficients - Array of coefficients [a_n, a_{n-1}, ..., a_0].
+         * @returns {string} - The polynomial in a string format (e.g., "x^2 - 4x + 3").
+         */
+        function formatPolynomial(coefficients) {
+            const degree = coefficients.length - 1;
+            let polyStr = '';
+
+            for (let i = 0; i <= degree; i++) {
+                const coeff = coefficients[i];
+                const exp = degree - i;
+                if (coeff === 0) continue;
+
+                let term = '';
+
+                // Handle sign
+                if (i > 0 && coeff > 0) {
+                    term += '+';
+                } else if (coeff < 0) {
+                    term += '-';
+                }
+                
+                const absCoeff = Math.abs(coeff);
+                
+                // Handle coefficient value
+                if (exp === 0) {
+                    // Constant term
+                    term += absCoeff.toFixed(4).replace(/\.?0+$/, '');
+                } else if (absCoeff !== 1) {
+                    // Coefficient other than 1 or -1
+                    term += absCoeff.toFixed(4).replace(/\.?0+$/, '');
+                }
+
+                // Handle variable 'x'
+                if (exp > 0) {
+                    term += 'x';
+                    if (exp > 1) {
+                        term += '^' + exp;
+                    }
+                }
+
+                polyStr += term;
+            }
+
+            // Clean up if the first term is just a sign (e.g., '+x^2' -> 'x^2')
+            if (polyStr.startsWith('+')) {
+                polyStr = polyStr.substring(1);
+            }
+            // If the polynomial is empty (all zeros), return '0'
+             if (polyStr === '') {
+                return '0';
+            }
+            
+            return polyStr;
+        }
+
+
+        // --- Drawing/Canvas Functions ---
+
+        /**
+         * Draws the polynomial graph on the canvas.
+         * @param {number[]} coefficients - Array of coefficients [a_n, a_{n-1}, ..., a_0].
+         */
+        function drawGraph(coefficients) {
+            if (coefficients.length === 0 || coefficients.every(c => c === 0)) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.font = '16px Arial';
+                ctx.fillStyle = '#6b7280';
+                ctx.textAlign = 'center';
+                ctx.fillText('Enter a non-zero polynomial P(x)', canvas.width / 2, canvas.height / 2);
+                return;
+            }
+            
+            const W = canvas.width;
+            const H = canvas.height;
+            const PADDING = 20;
+
+            ctx.clearRect(0, 0, W, H);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, W, H);
+
+            // 1. Determine the range (x-values from -10 to 10, y-values based on evaluation)
+            const xMin = -10;
+            const xMax = 10;
+            const step = 0.5;
+            const data = [];
+            let yMin = Infinity;
+            let yMax = -Infinity;
+
+            for (let x = xMin; x <= xMax; x += step) {
+                const y = evaluatePolynomial(coefficients, x);
+                data.push({ x, y });
+                if (!isNaN(y) && isFinite(y)) {
+                    yMin = Math.min(yMin, y);
+                    yMax = Math.max(yMax, y);
+                }
+            }
+            
+            // Adjust yMin/yMax to be symmetric around 0 if they are close, or to a reasonable range
+            if (yMax - yMin < 10) {
+                const center = (yMax + yMin) / 2;
+                yMin = center - 5;
+                yMax = center + 5;
+            } else {
+                 // Add a small buffer to the max/min
+                const buffer = (yMax - yMin) * 0.1;
+                yMin -= buffer;
+                yMax += buffer;
+            }
+            
+            if (yMin === yMax) {
+                yMin -= 1;
+                yMax += 1;
+            }
+
+            // 2. Mapping functions (World to Screen)
+            const mapX = x => PADDING + (x - xMin) * (W - 2 * PADDING) / (xMax - xMin);
+            const mapY = y => H - PADDING - (y - yMin) * (H - 2 * PADDING) / (yMax - yMin);
+
+            // 3. Draw Axes
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 1;
+            
+            // X-Axis (where y=0)
+            const yOrigin = mapY(0);
+            if (yOrigin >= PADDING && yOrigin <= H - PADDING) {
+                ctx.beginPath();
+                ctx.moveTo(PADDING, yOrigin);
+                ctx.lineTo(W - PADDING, yOrigin);
+                ctx.stroke();
+            }
+
+            // Y-Axis (where x=0)
+            const xOrigin = mapX(0);
+            if (xOrigin >= PADDING && xOrigin <= W - PADDING) {
+                ctx.beginPath();
+                ctx.moveTo(xOrigin, PADDING);
+                ctx.lineTo(xOrigin, H - PADDING);
+                ctx.stroke();
+            }
+
+            // 4. Draw labels and grid lines
+            ctx.font = '10px Arial';
+            ctx.fillStyle = '#374151';
+            
+            // X-Axis Ticks
+            for (let x = Math.ceil(xMin); x <= Math.floor(xMax); x += 2) {
+                if (x !== 0) {
+                    const sx = mapX(x);
+                    ctx.fillText(x, sx, yOrigin + 10);
+                    // Draw grid line
+                    ctx.strokeStyle = '#f3f4f6';
+                    ctx.beginPath();
+                    ctx.moveTo(sx, PADDING);
+                    ctx.lineTo(sx, H - PADDING);
+                    ctx.stroke();
+                }
+            }
+            
+            // Y-Axis Ticks
+            const yRange = yMax - yMin;
+            const yStep = Math.pow(10, Math.floor(Math.log10(yRange / 5)));
+            for (let y = Math.ceil(yMin / yStep) * yStep; y <= Math.floor(yMax / yStep) * yStep; y += yStep) {
+                if (y !== 0) {
+                    const sy = mapY(y);
+                    ctx.fillText(y.toFixed(0).replace(/\.0+$/, ''), xOrigin - 10, sy + 3);
+                    // Draw grid line
+                    ctx.strokeStyle = '#f3f4f6';
+                    ctx.beginPath();
+                    ctx.moveTo(PADDING, sy);
+                    ctx.lineTo(W - PADDING, sy);
+                    ctx.stroke();
+                }
+            }
+            
+            // Redraw Axes over grid
+            ctx.strokeStyle = '#a1a1aa';
+            ctx.lineWidth = 1;
+            
+            if (yOrigin >= PADDING && yOrigin <= H - PADDING) {
+                ctx.beginPath();
+                ctx.moveTo(PADDING, yOrigin);
+                ctx.lineTo(W - PADDING, yOrigin);
+                ctx.stroke();
+                ctx.fillText('x', W - PADDING + 10, yOrigin);
+            }
+
+            if (xOrigin >= PADDING && xOrigin <= W - PADDING) {
+                ctx.beginPath();
+                ctx.moveTo(xOrigin, PADDING);
+                ctx.lineTo(xOrigin, H - PADDING);
+                ctx.stroke();
+                ctx.fillText('y', xOrigin, PADDING - 5);
+            }
+             ctx.fillText('0', xOrigin + 5, yOrigin + 10); // Origin label
+
+            // 5. Draw the Curve (the Polynomial)
+            ctx.strokeStyle = '#ef4444'; // Red color
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            let firstPoint = true;
+            for (const point of data) {
+                const sx = mapX(point.x);
+                const sy = mapY(point.y);
+
+                // Skip points far outside the visible area, but try to connect points on screen
+                const isVisible = sy >= PADDING && sy <= H - PADDING;
+
+                if (!isNaN(sy) && isFinite(sy)) {
+                    if (firstPoint) {
+                        ctx.moveTo(sx, sy);
+                        firstPoint = false;
+                    } else {
+                        ctx.lineTo(sx, sy);
+                    }
+                } else {
+                    // Break the line if a point is non-finite (e.g., too large)
+                    firstPoint = true;
+                }
+            }
+            
+            ctx.stroke();
+        }
+
+        // --- Polynomial Analysis Functions ---
+
+        function updateEvaluation() {
+            const polyStr = inputElement.value;
+            const { coefficients, hasK } = parsePolynomial(polyStr);
+            const x = parseFloat(xValueInput.value);
+            
+            let resultText = '';
+            
+            if (hasK) {
+                 resultText = `P(${x}) cannot be calculated without a value for 'k'.`;
+            } else if (coefficients.length === 0 || coefficients.every(c => c === 0)) {
+                resultText = `P(${x}) = 0`;
+            } else {
+                const result = evaluatePolynomial(coefficients, x);
+                resultText = `P(${x}) = ${result.toFixed(4).replace(/\.?0+$/, '')}`;
+            }
+
+            document.getElementById('evaluationResult').textContent = resultText;
+        }
+        
+        function updateValueTable(coefficients) {
+            const tableContainer = document.getElementById('valueTableContainer');
+            if (coefficients.length === 0 || coefficients.every(c => c === 0)) {
+                tableContainer.innerHTML = `<p class="p-3 text-sm italic text-gray-500">P(x) is zero, so all y-values are 0.</p>`;
+                return;
+            }
+
+            let tableHTML = `<table class="min-w-full divide-y divide-blue-200">
+                <thead class="bg-blue-100 sticky top-0">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">x</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">P(x) (y)</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">`;
+
+            for (let x = -5; x <= 5; x += 0.5) {
+                const y = evaluatePolynomial(coefficients, x);
+                const displayY = y.toFixed(4).replace(/\.0+$/, '');
+                tableHTML += `<tr>
+                    <td class="px-6 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${x.toFixed(1).replace(/\.0$/, '')}</td>
+                    <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-500">${displayY}</td>
+                </tr>`;
+            }
+
+            tableHTML += `</tbody></table>`;
+            tableContainer.innerHTML = tableHTML;
+        }
+        
+        /**
+         * The main function to analyze the polynomial and update all DOM elements.
+         */
+        function analyzePolynomial() {
+            const polyStr = inputElement.value;
+            const cleanedPolyStr = cleanPolynomial(polyStr, 0); // Use k=0 for initial calculations/graphing
+            const { coefficients, degree, hasK, originalCoefficients } = parsePolynomial(cleanedPolyStr);
+            
+            // --- Helper to clear quadratic-only fields
+            const clearQuadraticResults = () => {
+                document.getElementById('zerosResult').textContent = `Requires P(x) to be a quadratic equation (degree 2).`;
+                document.getElementById('discriminantResult').textContent = '';
+                document.getElementById('rootsResult').innerHTML = `The calculated roots (zeros) of the polynomial are: <span class="font-bold text-orange-700" id="calculatedRoots">N/A</span>`;
+                document.getElementById('distinctCountResult').innerHTML = `Distinct count of real roots: <span class="font-bold text-orange-700" id="distinctRealCount">N/A</span>`;
+                document.getElementById('rootsNatureResult').innerHTML = `Nature of the roots: <span class="font-bold text-orange-700" id="natureOfRoots">N/A</span>`;
+                document.getElementById('discriminantAnalysisResult').innerHTML = `Discriminant ($\Delta$ or $D$): <span class="font-bold text-pink-700" id="currentDiscriminant">N/A</span>`;
+                document.getElementById('polynomialSolverSteps').innerHTML = `<p class="text-sm italic text-gray-500">Only quadratic (degree 2) equations are solved step-by-step.</p>`;
+                document.getElementById('lineOfSymmetryResult').textContent = `Line of Symmetry: Only applicable for quadratic functions.`;
+                document.getElementById('graphIntersectionResult').textContent = '';
+                document.getElementById('relationshipResult').textContent = 'Vieta\'s Formulas are most commonly applied to quadratics to relate zeros and coefficients.';
+                document.getElementById('relationshipDetails').textContent = '';
+                document.getElementById('factorizationExplanation').textContent = '';
+            };
+
+            // --- 1. Degree and Evaluation ---
+            let degreeText;
+            if (coefficients.length === 0 || coefficients.every(c => c === 0)) {
+                degreeText = `The entered polynomial is P(x) = 0. Its degree is undefined or conventionally $-\\infty$.`;
+                clearQuadraticResults();
+            } else {
+                 const formattedPoly = formatPolynomial(coefficients);
+                 let kSuffix = hasK ? ' (assuming k=0 for analysis)' : '';
+                 
+                 if (hasK) {
+                     degreeText = `The polynomial is $P(x) = ${formatPolynomial(originalCoefficients)} + k$. ${kSuffix} The degree is $\\text{deg}(P) = ${degree}$. The leading coefficient is ${coefficients[0]}.`;
+                 } else {
+                     degreeText = `The formatted polynomial is $P(x) = ${formattedPoly}$. The degree is $\\text{deg}(P) = ${degree}$. The leading coefficient is ${coefficients[0]}.`;
+                 }
+                
+                // Clear the special k-handling if k is not present or degree is too high
+                 if (!hasK || degree !== 2) {
+                     // Clear or reset k-solver inputs if not a quadratic with k
+                 }
+            }
+            document.getElementById('degreeResult').innerHTML = degreeText;
+            
+            // Re-run evaluation for the default x-value
+            updateEvaluation();
+
+            // --- 5. X and Y Values Table ---
+            updateValueTable(coefficients);
+
+            // --- Graphing ---
+            drawGraph(coefficients);
+            
+            // --- 6. Geometrical Properties (General) ---
+            const consistencyResult = hasK 
+                ? 'The system is inconsistent as the constant k is unknown, preventing a definite solution for the roots.'
+                : 'The polynomial P(x) is generally consistent unless it is the zero polynomial (P(x)=0).';
+            document.getElementById('consistencyResult').textContent = consistencyResult;
+
+            const graphDependencyResult = hasK
+                ? 'The roots and graph shape depend on the value of k.'
+                : 'The roots and graph shape are determined solely by the input coefficients.';
+            document.getElementById('graphDependencyResult').textContent = `Graph Dependency: ${graphDependencyResult}`;
+            
+            let graphType = '';
+            if (degree === 0) {
+                graphType = `The graph is a horizontal line $y = ${coefficients[0]}$ (constant function).`;
+            } else if (degree === 1) {
+                graphType = 'The graph is a straight line (linear function).';
+            } else if (degree === 2) {
+                 graphType = 'The graph is a parabola (quadratic function).';
+            } else if (degree === 3) {
+                 graphType = 'The graph is a cubic curve.';
+            } else {
+                 graphType = `The graph is a general polynomial curve of degree ${degree}.`;
+            }
+            document.getElementById('graphTypeResult').textContent = `Graph Type: ${graphType}`;
+            
+            const yIntercept = coefficients.length > 0 ? coefficients[coefficients.length - 1] : 0;
+            document.getElementById('yInterceptResult').textContent = `Y-intercept (P(0)): ${yIntercept.toFixed(2).replace(/\.0+$/, '')}`;
+
+            // --- Quadratic Specific Analysis (Degree 2) ---
+            if (degree === 2 && !hasK) {
+                const { discriminant, roots, solutionSteps, nature } = solveQuadratic(coefficients);
+                const [a, b, c] = coefficients;
+
+                // 2. Zeros
+                const formattedRoots = roots.length > 1 ? roots.join(' and ') : roots[0];
+                document.getElementById('zerosResult').textContent = `The zeros (roots) of P(x)=0 are: ${formattedRoots}`;
+                document.getElementById('discriminantResult').textContent = `Discriminant (D) = ${discriminant}`;
+
+                // 4. Zeros and Coefficients Relationship
+                const sumOfRoots = -b / a;
+                const productOfRoots = c / a;
+                document.getElementById('relationshipResult').textContent = 'Vieta\'s Formulas relate the roots (α, β) to the coefficients:';
+                document.getElementById('relationshipDetails').innerHTML = `
+                    Sum of Zeros ($\alpha + \beta$) = $-b/a = -(${b})/(${a}) = ${sumOfRoots.toFixed(4).replace(/\.?0+$/, '')} <br>
+                    Product of Zeros ($\alpha \cdot \beta$) = $c/a = (${c})/(${a}) = ${productOfRoots.toFixed(4).replace(/\.?0+$/, '')}
+                `;
+                document.getElementById('factorizationExplanation').textContent = `P(x) can be factored as $P(x) = a(x - x_1)(x - x_2)$.`;
+
+                // 6. Geometrical Properties (Line of Symmetry / Vertex)
+                const axisOfSymmetry = -b / (2 * a);
+                const vertexY = evaluatePolynomial(coefficients, axisOfSymmetry);
+                document.getElementById('lineOfSymmetryResult').textContent = `Line of Symmetry (Axis of Symmetry): $x = -b/(2a) = ${axisOfSymmetry.toFixed(4).replace(/\.?0+$/, '')}$. Vertex is at (${axisOfSymmetry.toFixed(2)}, ${vertexY.toFixed(2)}).`;
+                document.getElementById('graphIntersectionResult').textContent = `The number of x-intercepts is determined by the discriminant D: D>0 (2), D=0 (1), D<0 (0). Currently: ${roots.length === 2 && nature === 'real and distinct' ? 'Two' : (roots.length === 1 ? 'One' : 'Zero')} real x-intercepts.`;
+                
+                // 7. Roots, Distinct Count, Nature
+                document.getElementById('calculatedRoots').textContent = formattedRoots;
+                document.getElementById('distinctRealCount').textContent = nature === 'real and distinct' ? 'Two' : (nature === 'real and equal (coincident)' ? 'One' : 'Zero');
+                document.getElementById('rootsNatureResult').textContent = nature;
+                
+                // 8. Discriminant Analysis
+                document.getElementById('currentDiscriminant').textContent = discriminant;
+
+                // 9. Equation Solver (Step-by-Step)
+                document.getElementById('polynomialSolverSteps').innerHTML = solutionSteps.map(step => step.replace(/\$/g, '')).join(''); // Remove MathJax markers for non-MathJax environment initially
+
+            } else if (degree === 2 && hasK) {
+                // Special handling for a quadratic with 'k'
+                const [a, b, cK] = originalCoefficients; // cK is the coefficient of k, usually c is 0
+                const c = coefficients[coefficients.length - 1]; // This is the numerical constant part, 0 if k is the only constant
+                const originalC = document.getElementById('polynomialInput').value.includes('k') ? `c = ${c} + k` : `c = ${c}`;
+                
+                document.getElementById('zerosResult').textContent = `The roots depend on the value of k. The discriminant is $D = b^2 - 4ac$.`;
+                document.getElementById('discriminantResult').textContent = `For $P(x) = ${formatPolynomial(coefficients)} + k$: $D = (${b})^2 - 4(${a})(${c}+k) = ${b*b} - 4*${a*c} - 4${a}k$`;
+                
+                // Placeholder for other results
+                document.getElementById('calculatedRoots').textContent = `Roots depend on k.`;
+                document.getElementById('distinctRealCount').textContent = `Depends on D > 0, D = 0, or D < 0.`;
+                document.getElementById('rootsNatureResult').textContent = `Depends on D.`;
+                document.getElementById('currentDiscriminant').textContent = `D = ${b*b} - 4*${a*c} - 4${a}k`;
+                document.getElementById('polynomialSolverSteps').innerHTML = `<p class="text-sm italic text-gray-500">The general form for solving for k is shown in Section 11.</p>`;
+                
+                const axisOfSymmetry = -b / (2 * a);
+                document.getElementById('lineOfSymmetryResult').textContent = `Line of Symmetry: $x = -b/(2a) = ${axisOfSymmetry.toFixed(4).replace(/\.?0+$/, '')}$. Vertex is at $x=${axisOfSymmetry.toFixed(2)}$, $y$ depends on $k$.`;
+                document.getElementById('graphIntersectionResult').textContent = `The number of x-intercepts depends on the value of k.`;
+
+
+            } else if (degree !== 2) {
+                clearQuadraticResults();
+                document.getElementById('lineOfSymmetryResult').textContent = `Line of Symmetry: Only applicable for quadratic functions.`;
+                if (degree > 2) {
+                    document.getElementById('zerosResult').textContent = `The polynomial is of degree ${degree}. Finding exact zeros typically requires numerical methods or factorization for higher degrees.`;
+                }
+            }
+            
+            // Re-render MathJax to display the updated equations
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        }
+        
+        /**
+         * Forms a quadratic equation given the sum and product of its roots.
+         */
+        function formQuadraticEquation() {
+            const sum = parseFloat(sumInput.value);
+            const product = parseFloat(productInput.value);
+            const resultElement = document.getElementById('formedEquationResult');
+
+            if (isNaN(sum) || isNaN(product)) {
+                resultElement.textContent = "Please enter valid numbers for both sum and product.";
+                return;
+            }
+
+            const b = -sum;
+            const c = product;
+
+            // Form the polynomial string: x^2 - (sum)x + (product) = 0
+            const coeffs = [1, b, c];
+            const polyStr = formatPolynomial(coeffs);
+
+            resultElement.innerHTML = `\$x^2 - (${sum})x + (${product}) = 0\$ <br> or <br> \$${polyStr} = 0\$`;
+
+            // Re-render MathJax
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        }
+        
+        // --- K-Solver Functions (Section 11) ---
+
+        /**
+         * Solves for k when k is the coefficient 'a' in $kx^2 + bx + c = 0$
+         */
+        function solveKforA() {
+            const b = parseFloat(document.getElementById('kAsA_bInput').value);
+            const c = parseFloat(document.getElementById('kAsA_cInput').value);
+            const resultElement = document.getElementById('kAsA_result');
+            
+            if (isNaN(b) || isNaN(c)) {
+                resultElement.textContent = "Enter valid b and c values.";
+                return;
+            }
+
+            // Condition for equal roots: D = b^2 - 4ac = 0
+            // b^2 - 4(k)c = 0
+            // 4kc = b^2
+            // k = b^2 / (4c)
+            
+            if (c === 0) {
+                 if (b === 0) {
+                    resultElement.textContent = "k can be any value (0=0).";
+                } else {
+                     // b^2 - 4kc = 0 => b^2 = 0. If b!=0, no solution
+                     resultElement.textContent = "No solution for non-zero b.";
+                }
+                return;
+            }
+
+            const k = (b * b) / (4 * c);
+            resultElement.innerHTML = `
+                <div class="space-y-1 text-left text-sm">
+                    <div class="step">For equal roots, $D=0$.</div>
+                    <div class="step">Formula: $b^2 - 4kc = 0$</div>
+                    <div class="step">Solution for k: $k = \\frac{b^2}{4c} = \\frac{${b*b}}{4(${c})} = ${k.toFixed(4).replace(/\.?0+$/, '')}$</div>
+                </div>
+            `;
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        /**
+         * Solves for k when k is the coefficient 'b' in $ax^2 + kx + c = 0$
+         */
+        function solveKforB() {
+            const a = parseFloat(document.getElementById('kAsB_aInput').value);
+            const c = parseFloat(document.getElementById('kAsB_cInput').value);
+            const resultElement = document.getElementById('kAsB_result');
+            
+            if (isNaN(a) || isNaN(c)) {
+                resultElement.textContent = "Enter valid a and c values.";
+                return;
+            }
+
+            // Condition for equal roots: D = b^2 - 4ac = 0
+            // k^2 - 4ac = 0
+            // k^2 = 4ac
+            // k = ±sqrt(4ac) = ±2*sqrt(ac)
+            
+            const productAC = a * c;
+
+            if (productAC < 0) {
+                resultElement.textContent = "No real solution for k (a*c < 0).";
+                return;
+            }
+            
+            const kPos = 2 * Math.sqrt(productAC);
+            const kNeg = -kPos;
+            
+            const posF = kPos.toFixed(4).replace(/\.?0+$/, '');
+            const negF = kNeg.toFixed(4).replace(/\.?0+$/, '');
+
+            resultElement.innerHTML = `
+                <div class="space-y-1 text-left text-sm">
+                    <div class="step">For equal roots, $D=0$.</div>
+                    <div class="step">Formula: $k^2 - 4ac = 0 \implies k = \\pm 2\\sqrt{ac}$</div>
+                    <div class="step">Solution: $k = \\pm 2\\sqrt{(${a})(${c})} = \\pm ${posF}$</div>
+                </div>
+            `;
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        }
+        
+        /**
+         * Solves for k when k is the coefficient 'c' in $ax^2 + bx + k = 0$
+         */
+        function solveKforC() {
+            const a = parseFloat(document.getElementById('kAsC_aInput').value);
+            const b = parseFloat(document.getElementById('kAsC_bInput').value);
+            const resultElement = document.getElementById('kAsC_result');
+            
+            if (isNaN(a) || isNaN(b)) {
+                resultElement.textContent = "Enter valid a and b values.";
+                return;
+            }
+
+            // Condition for equal roots: D = b^2 - 4ac = 0
+            // b^2 - 4ak = 0
+            // 4ak = b^2
+            // k = b^2 / (4a)
+            
+            if (a === 0) {
+                if (b === 0) {
+                    resultElement.textContent = "k can be any value (0=0).";
+                } else {
+                     // b^2 - 4ak = 0 => b^2 = 0. If b!=0, no solution
+                     resultElement.textContent = "No solution for non-zero b.";
+                }
+                return;
+            }
+
+            const k = (b * b) / (4 * a);
+             resultElement.innerHTML = `
+                <div class="space-y-1 text-left text-sm">
+                    <div class="step">For equal roots, $D=0$.</div>
+                    <div class="step">Formula: $b^2 - 4ak = 0$</div>
+                    <div class="step">Solution for k: $k = \\frac{b^2}{4a} = \\frac{${b*b}}{4(${a})} = ${k.toFixed(4).replace(/\.?0+$/, '')}$</div>
+                </div>
+            `;
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        }
+
+
+        // --- Linear Equations Analyzer Functions ---
+        
+        /**
+         * Formats the linear equation string.
+         * @param {number} a - coefficient of x.
+         * @param {number} b - coefficient of y.
+         * @param {number} c - constant term.
+         * @param {string} eqName - Equation identifier (e.g., '1', '2').
+         * @returns {string} - Formatted equation string (LaTeX).
+         */
+        function formatLinearEquation(a, b, c, eqName) {
+            let terms = [];
+            
+            const formatTerm = (coeff, variable) => {
+                if (coeff === 0) return '';
+                let sign = coeff > 0 ? '+' : '-';
+                const absCoeff = Math.abs(coeff);
+                let coeffStr = absCoeff === 1 ? '' : absCoeff.toFixed(4).replace(/\.0+$/, '');
+                
+                // Special handling for the first term: no explicit '+'
+                if (terms.length === 0) {
+                    sign = coeff > 0 ? '' : '-';
+                    if (absCoeff === 1 && variable !== '') coeffStr = '';
+                    if (absCoeff === 1 && variable === '') coeffStr = absCoeff.toFixed(4).replace(/\.0+$/, ''); // c constant term
+                }
+                
+                return `${sign}${coeffStr}${variable}`;
+            };
+
+            terms.push(formatTerm(a, 'x'));
+            terms.push(formatTerm(b, 'y'));
+
+            let equationLHS = terms.filter(t => t !== '').join('');
+            if (equationLHS === '' && c !== 0) equationLHS = '0';
+            if (equationLHS === '' && c === 0) equationLHS = '0'; // For 0x + 0y = 0 case
+            
+            const cStr = c.toFixed(4).replace(/\.0+$/, '');
+
+            return `Eq ${eqName}: $${equationLHS} = ${cStr}$`;
+        }
+
+        /**
+         * Runs all three algebraic methods and the consistency analysis for linear equations.
+         */
+        function runAllAlgebraicMethods() {
+            const a1 = parseFloat(a1AlgInput.value);
+            const b1 = parseFloat(b1AlgInput.value);
+            const c1 = parseFloat(c1AlgInput.value);
+            const a2 = parseFloat(a2AlgInput.value);
+            const b2 = parseFloat(b2AlgInput.value);
+            const c2 = parseFloat(c2AlgInput.value);
+            
+            if ([a1, b1, c1, a2, b2, c2].some(isNaN)) {
+                 showMessageBox('Please enter valid numbers for all coefficients in the Linear Equations Analyzer.');
+                 return;
+            }
+            hideMessageBox();
+
+            const D = a1 * b2 - a2 * b1;
+            const Dx = c1 * b2 - c2 * b1;
+            const Dy = a1 * c2 - a2 * c1;
+
+            const eq1Str = formatLinearEquation(a1, b1, c1, '1');
+            const eq2Str = formatLinearEquation(a2, b2, c2, '2');
+
+            // --- Consistency Analysis ---
+            let consistencyText = '';
+            let ratioComparisonText = '';
+            let finalSolutionText = '';
+            let solutionX = 'N/A';
+            let solutionY = 'N/A';
+
+            if (D !== 0) {
+                // Unique Solution (Consistent)
+                consistencyText = 'Consistent System: **Unique Solution** (Intersecting Lines)';
+                solutionX = (Dx / D).toFixed(4).replace(/\.0+$/, '');
+                solutionY = (Dy / D).toFixed(4).replace(/\.0+$/, '');
+                finalSolutionText = `Final Solution: **$x=${solutionX}$, $y=${solutionY}$**`;
+                ratioComparisonText = `
+                    $\\frac{a_1}{a_2} = \\frac{${a1}}{${a2}} = ${a1 / a2}$ <br>
+                    $\\frac{b_1}{b_2} = \\frac{${b1}}{${b2}} = ${b1 / b2}$ <br>
+                    Condition: $\\frac{a_1}{a_2} \\neq \\frac{b_1}{b_2}$ (${a1 / a2} $\\neq$ ${b1 / b2}$)
+                `;
+            } else {
+                if (Dx === 0 && Dy === 0) {
+                    // Infinite Solutions (Consistent Dependent)
+                    consistencyText = 'Consistent System: **Infinite Solutions** (Coincident Lines)';
+                    finalSolutionText = `Final Solution: **Infinite Solutions**`;
+                    ratioComparisonText = `
+                        $\\frac{a_1}{a_2} = \\frac{b_1}{b_2} = \\frac{c_1}{c_2}$ (All Ratios are Equal) <br>
+                        Lines are Coincident.
+                    `;
+                } else {
+                    // No Solution (Inconsistent)
+                    consistencyText = 'Inconsistent System: **No Solution** (Parallel Lines)';
+                    finalSolutionText = `Final Solution: **No Solution**`;
+                     ratioComparisonText = `
+                        $\\frac{a_1}{a_2} = \\frac{b_1}{b_2} \\neq \\frac{c_1}{c_2}$ <br>
+                        Lines are Parallel.
+                    `;
+                }
+            }
+
+            document.getElementById('consistencyResultOutput').innerHTML = consistencyText;
+            document.getElementById('ratioComparison').innerHTML = ratioComparisonText;
+            document.getElementById('finalSolutionResult').innerHTML = finalSolutionText;
+            
+            // --- Step-by-Step Solutions ---
+            document.getElementById('substitutionSolution').innerHTML = getSubstitutionSteps(a1, b1, c1, a2, b2, c2, solutionX, solutionY, D, eq1Str, eq2Str);
+            document.getElementById('eliminationSolution').innerHTML = getEliminationSteps(a1, b1, c1, a2, b2, c2, solutionX, solutionY, D, eq1Str, eq2Str);
+            document.getElementById('crossMultiplicationSolution').innerHTML = getCrossMultiplicationSteps(a1, b1, c1, a2, b2, c2, solutionX, solutionY, D, Dx, Dy, eq1Str, eq2Str);
+
+            // --- Graphing ---
+            drawLinearGraph(a1, b1, c1, a2, b2, c2, D, solutionX, solutionY);
+
+            // Re-render MathJax
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        // --- Linear Graphing ---
+
+        function drawLinearGraph(a1, b1, c1, a2, b2, c2, D, solutionX, solutionY) {
+            const W = linearGraphCanvas.width;
+            const H = linearGraphCanvas.height;
+            const PADDING = 20;
+
+            linearCtx.clearRect(0, 0, W, H);
+            linearCtx.fillStyle = '#ffffff';
+            linearCtx.fillRect(0, 0, W, H);
+
+            const xMin = -10;
+            const xMax = 10;
+            const yMin = -10;
+            const yMax = 10;
+            
+            // Mapping functions (World to Screen)
+            const mapX = x => PADDING + (x - xMin) * (W - 2 * PADDING) / (xMax - xMin);
+            const mapY = y => H - PADDING - (y - yMin) * (H - 2 * PADDING) / (yMax - yMin);
+            
+            // --- Draw Grid and Axes ---
+            linearCtx.strokeStyle = '#e0e0e0';
+            linearCtx.lineWidth = 1;
+            
+            const yOrigin = mapY(0);
+            const xOrigin = mapX(0);
+
+            // Grid lines
+            linearCtx.strokeStyle = '#f3f4f6';
+            for (let x = Math.ceil(xMin); x <= Math.floor(xMax); x += 1) {
+                if (x !== 0) {
+                    const sx = mapX(x);
+                    linearCtx.beginPath();
+                    linearCtx.moveTo(sx, PADDING);
+                    linearCtx.lineTo(sx, H - PADDING);
+                    linearCtx.stroke();
+                }
+            }
+            for (let y = Math.ceil(yMin); y <= Math.floor(yMax); y += 1) {
+                if (y !== 0) {
+                    const sy = mapY(y);
+                    linearCtx.beginPath();
+                    linearCtx.moveTo(PADDING, sy);
+                    linearCtx.lineTo(W - PADDING, sy);
+                    linearCtx.stroke();
+                }
+            }
+            
+            // Axes
+            linearCtx.strokeStyle = '#a1a1aa';
+            linearCtx.lineWidth = 1;
+
+            if (yOrigin >= PADDING && yOrigin <= H - PADDING) {
+                linearCtx.beginPath();
+                linearCtx.moveTo(PADDING, yOrigin);
+                linearCtx.lineTo(W - PADDING, yOrigin);
+                linearCtx.stroke();
+            }
+
+            if (xOrigin >= PADDING && xOrigin <= W - PADDING) {
+                linearCtx.beginPath();
+                linearCtx.moveTo(xOrigin, PADDING);
+                linearCtx.lineTo(xOrigin, H - PADDING);
+                linearCtx.stroke();
+            }
+            
+            linearCtx.font = '10px Arial';
+            linearCtx.fillStyle = '#374151';
+            linearCtx.textAlign = 'center';
+            linearCtx.fillText('x', W - PADDING + 10, yOrigin);
+            linearCtx.fillText('y', xOrigin, PADDING - 5);
+            linearCtx.fillText('0', xOrigin + 5, yOrigin + 10);
+            
+            // --- Line 1 (a1x + b1y = c1) ---
+            if (b1 !== 0) {
+                // Line 1: y = (c1 - a1x) / b1
+                linearCtx.strokeStyle = '#3b82f6'; // Blue
+                linearCtx.lineWidth = 2;
+                linearCtx.beginPath();
+                
+                let firstPoint = true;
+                for (let x = xMin; x <= xMax; x += 0.5) {
+                    const y = (c1 - a1 * x) / b1;
+                    const sx = mapX(x);
+                    const sy = mapY(y);
+
+                    if (!isNaN(sy) && isFinite(sy) && sy >= PADDING - H && sy <= 2 * H - PADDING) {
+                        if (firstPoint) {
+                            linearCtx.moveTo(sx, sy);
+                            firstPoint = false;
+                        } else {
+                            linearCtx.lineTo(sx, sy);
+                        }
+                    } else {
+                        firstPoint = true; // Break line if non-finite/far out
+                    }
+                }
+                linearCtx.stroke();
+            } else if (a1 !== 0) {
+                // Line 1 is a vertical line: x = c1 / a1
+                const xVal = c1 / a1;
+                const sx = mapX(xVal);
+                if (sx >= PADDING && sx <= W - PADDING) {
+                    linearCtx.strokeStyle = '#3b82f6';
+                    linearCtx.lineWidth = 2;
+                    linearCtx.beginPath();
+                    linearCtx.moveTo(sx, PADDING);
+                    linearCtx.lineTo(sx, H - PADDING);
+                    linearCtx.stroke();
+                }
+            }
+            
+            // --- Line 2 (a2x + b2y = c2) ---
+            if (b2 !== 0) {
+                 // Line 2: y = (c2 - a2x) / b2
+                linearCtx.strokeStyle = '#ef4444'; // Red
+                linearCtx.lineWidth = 2;
+                linearCtx.beginPath();
+                
+                let firstPoint = true;
+                for (let x = xMin; x <= xMax; x += 0.5) {
+                    const y = (c2 - a2 * x) / b2;
+                    const sx = mapX(x);
+                    const sy = mapY(y);
+
+                    if (!isNaN(sy) && isFinite(sy) && sy >= PADDING - H && sy <= 2 * H - PADDING) {
+                        if (firstPoint) {
+                            linearCtx.moveTo(sx, sy);
+                            firstPoint = false;
+                        } else {
+                            linearCtx.lineTo(sx, sy);
+                        }
+                    } else {
+                        firstPoint = true; // Break line if non-finite/far out
+                    }
+                }
+                linearCtx.stroke();
+            } else if (a2 !== 0) {
+                // Line 2 is a vertical line: x = c2 / a2
+                const xVal = c2 / a2;
+                const sx = mapX(xVal);
+                if (sx >= PADDING && sx <= W - PADDING) {
+                    linearCtx.strokeStyle = '#ef4444';
+                    linearCtx.lineWidth = 2;
+                    linearCtx.beginPath();
+                    linearCtx.moveTo(sx, PADDING);
+                    linearCtx.lineTo(sx, H - PADDING);
+                    linearCtx.stroke();
+                }
+            }
+
+            // --- Draw Solution Point ---
+            if (D !== 0) {
+                const sx = mapX(parseFloat(solutionX));
+                const sy = mapY(parseFloat(solutionY));
+
+                // Draw a large circle at the intersection point
+                linearCtx.fillStyle = '#10b981'; // Green dot
+                linearCtx.beginPath();
+                linearCtx.arc(sx, sy, 5, 0, 2 * Math.PI);
+                linearCtx.fill();
+                
+                // Label the point
+                linearCtx.font = '12px Arial';
+                linearCtx.fillText(`(${solutionX}, ${solutionY})`, sx + 30, sy - 10);
+            }
+        }
+        
+        // --- Step-by-Step Helper Functions (Abstraction of the methods) ---
+        
+        function getSubstitutionSteps(a1, b1, c1, a2, b2, c2, solX, solY, D, eq1Str, eq2Str) {
+            if (D === 0) return `<p class="text-sm italic text-gray-500">Substitution is typically used for systems with a unique solution. ${D === 0 && (a1*c2 - a2*c1 === 0 && c1*b2 - c2*b1 === 0) ? 'This system has infinite solutions.' : 'This system has no solution.'}</p>`;
+
+            let steps = [];
+            
+            steps.push(`<div class="step"><span class="step-title">1. Define Equations</span>: ${eq1Str} | ${eq2Str}</div>`);
+
+            // Isolate x from Eq 1 (assuming b1 != 0, a1 != 0)
+            let isoVar = 'x';
+            let isoEq = '1';
+            let isolationText = '';
+            
+            // Try to find the easiest variable to isolate (coeff 1 or -1)
+            if (a1 === 1 || a1 === -1) {
+                isoVar = 'x'; isoEq = '1';
+                const sign = a1 === 1 ? '' : '-';
+                isolationText = `From Eq 1, isolate x: $x = ${sign}${b1 === 0 ? '' : formatTerm(-b1, 'y', true)} + ${c1}$`;
+            } else if (b1 === 1 || b1 === -1) {
+                isoVar = 'y'; isoEq = '1';
+                const sign = b1 === 1 ? '' : '-';
+                isolationText = `From Eq 1, isolate y: $y = ${sign}${a1 === 0 ? '' : formatTerm(-a1, 'x', true)} + ${c1}$`;
+            } else if (a2 === 1 || a2 === -1) {
+                isoVar = 'x'; isoEq = '2';
+                const sign = a2 === 1 ? '' : '-';
+                isolationText = `From Eq 2, isolate x: $x = ${sign}${b2 === 0 ? '' : formatTerm(-b2, 'y', true)} + ${c2}$`;
+            } else if (b2 === 1 || b2 === -1) {
+                isoVar = 'y'; isoEq = '2';
+                const sign = b2 === 1 ? '' : '-';
+                isolationText = `From Eq 2, isolate y: $y = ${sign}${a2 === 0 ? '' : formatTerm(-a2, 'x', true)} + ${c2}$`;
+            } else {
+                 // Fallback: isolate x from Eq 1 using division
+                 isoVar = 'x'; isoEq = '1';
+                 const b1Str = b1.toFixed(2).replace(/\.0+$/, '');
+                 const c1Str = c1.toFixed(2).replace(/\.0+$/, '');
+                 const a1Str = a1.toFixed(2).replace(/\.0+$/, '');
+                 if (a1 !== 0) {
+                     isolationText = `From Eq 1, isolate x: $x = \\frac{${c1Str} - ${b1Str}y}{${a1Str}}$`;
+                 } else if (b1 !== 0) {
+                     isoVar = 'y';
+                     isolationText = `From Eq 1, isolate y: $y = \\frac{${c1Str} - ${a1Str}x}{${b1Str}}$`;
+                 } else {
+                     isolationText = 'Cannot isolate a variable; equation 1 is trivial.';
+                 }
+            }
+            
+            steps.push(`<div class="step"><span class="step-title">2. Isolate a Variable (From Eq ${isoEq})</span>: ${isolationText}</div>`);
+            
+            const substituteInto = isoEq === '1' ? '2' : '1';
+            steps.push(`<div class="step"><span class="step-title">3. Substitute into the other Equation (Eq ${substituteInto})</span>: Substitute the expression for ${isoVar} into the other equation to get an equation in one variable.</div>`);
+            
+            steps.push(`<div class="step"><span class="step-title">4. Solve for the remaining Variable</span>: The calculation yields: $${isoVar === 'x' ? 'y' : 'x'} = ${isoVar === 'x' ? solY : solX}$</div>`);
+            
+            steps.push(`<div class="step"><span class="step-title">5. Back-Substitute</span>: Substitute the found value back into the isolated expression from Step 2 to find the other variable.</div>`);
+            
+            steps.push(`<div class="step"><span class="step-title">6. Final Solution</span>: $x=${solX}$, $y=${solY}$</div>`);
+            
+            return steps.join('');
+        }
+
+        function getEliminationSteps(a1, b1, c1, a2, b2, c2, solX, solY, D, eq1Str, eq2Str) {
+            if (D === 0) return `<p class="text-sm italic text-gray-500">Elimination is typically used for systems with a unique solution. ${D === 0 && (a1*c2 - a2*c1 === 0 && c1*b2 - c2*b1 === 0) ? 'This system has infinite solutions.' : 'This system has no solution.'}</p>`;
+
+            let steps = [];
+            
+            steps.push(`<div class="step"><span class="step-title">1. Define Equations</span>: ${eq1Str} | ${eq2Str}</div>`);
+            
+            const lcmA = Math.abs(a1 * a2) / gcf(Math.abs(a1), Math.abs(a2));
+            const lcmB = Math.abs(b1 * b2) / gcf(Math.abs(b1), Math.abs(b2));
+
+            let multiplyBy1 = 1;
+            let multiplyBy2 = 1;
+            let targetVar = 'x';
+
+            // Decide whether to eliminate x or y (choose the one with smaller LCM)
+            if (lcmA <= lcmB || b2 === 0) {
+                targetVar = 'x';
+                multiplyBy1 = lcmA / a1;
+                multiplyBy2 = lcmA / a2;
+                if (a1 < 0) multiplyBy1 *= -1; // Ensure signs are opposite for addition/subtraction
+                if (a2 < 0) multiplyBy2 *= -1;
+            } else {
+                targetVar = 'y';
+                multiplyBy1 = lcmB / b1;
+                multiplyBy2 = lcmB / b2;
+                if (b1 < 0) multiplyBy1 *= -1;
+                if (b2 < 0) multiplyBy2 *= -1;
+            }
+            
+            steps.push(`<div class="step"><span class="step-title">2. Multiply Equations (to eliminate ${targetVar})</span>: 
+                Multiply Eq 1 by ${multiplyBy1} and Eq 2 by ${multiplyBy2} so that the coefficient of ${targetVar} is the same (or opposite).
+            </div>`);
+            
+            steps.push(`<div class="step"><span class="step-title">3. Add/Subtract the new Equations</span>: 
+                Add the modified equations to eliminate ${targetVar} and solve for the remaining variable. This yields: $${targetVar === 'x' ? 'y' : 'x'} = ${targetVar === 'x' ? solY : solX}$
+            </div>`);
+            
+            steps.push(`<div class="step"><span class="step-title">4. Back-Substitute</span>: Substitute the found value back into one of the original equations to find the value of ${targetVar}.</div>`);
+            
+            steps.push(`<div class="step"><span class="step-title">5. Final Solution</span>: $x=${solX}$, $y=${solY}$</div>`);
+            
+            return steps.join('');
+        }
+        
+        function getCrossMultiplicationSteps(a1, b1, c1, a2, b2, c2, solX, solY, D, Dx, Dy, eq1Str, eq2Str) {
+            if (D === 0) return `<p class="text-sm italic text-gray-500">Cross-Multiplication (Cramer's Rule for a $2 \times 2$ system) requires a unique solution ($D \\neq 0$).</p>`;
+
+            let steps = [];
+            
+            steps.push(`<div class="step"><span class="step-title">1. Define Equations (Standard Form $ax + by - c = 0$)</span>: 
+                $a_1x + b_1y - c_1 = 0$ <br> 
+                $a_2x + b_2y - c_2 = 0$ 
+            </div>`);
+            
+            steps.push(`<div class="step"><span class="step-title">2. Setup Cross-Multiplication Ratios</span>:
+                $$\\frac{x}{b_1c_2 - b_2c_1} = \\frac{-y}{a_1c_2 - a_2c_1} = \\frac{1}{a_1b_2 - a_2b_1}$$
+                <span class="text-xs text-gray-500 italic">Note: The second ratio is sometimes written as $\\frac{y}{c_1a_2 - c_2a_1}$ to avoid the negative sign.</span>
+            </div>`);
+            
+            const b1c2 = b1 * c2;
+            const b2c1 = b2 * c1;
+            const a1c2 = a1 * c2;
+            const a2c1 = a2 * c1;
+            const a1b2 = a1 * b2;
+            const a2b1 = a2 * b1;
+            
+            steps.push(`<div class="step"><span class="step-title">3. Substitute and Calculate Determinants</span>:
+                Denominator $D = a_1b_2 - a_2b_1 = (${a1})(${b2}) - (${a2})(${b1}) = ${a1b2} - ${a2b1} = ${D}$ <br>
+                Numerator for $x$ ($D_x$) = $b_1c_2 - b_2c_1 = (${b1})(${c2}) - (${b2})(${c1}) = ${b1c2} - ${b2c1} = ${Dx}$ <br>
+                Numerator for $y$ ($D_y$) = $a_1c_2 - a_2c_1 = (${a1})(${c2}) - (${a2})(${c1}) = ${a1c2} - ${a2c1} = ${Dy}$
+            </div>`);
+            
+            steps.push(`<div class="step"><span class="step-title">4. Calculate Solutions</span>:
+                $x = \\frac{D_x}{D} = \\frac{${Dx}}{${D}} = ${solX}$ <br>
+                $y = \\frac{-D_y}{-D} = \\frac{D_y}{D} = \\frac{${Dy}}{${D}} = ${solY}$
+            </div>`);
+            
+            steps.push(`<div class="step"><span class="step-title">5. Final Solution</span>: $x=${solX}$, $y=${solY}$</div>`);
+            
+            return steps.join('');
+        }
+        
+        // --- Utility Functions ---
+        function gcf(a, b) {
+            return b === 0 ? a : gcf(b, a % b);
+        }
+        
+        function formatTerm(coeff, variable, includeSign) {
+            if (coeff === 0) return '';
+            let sign = '';
+            if (includeSign) {
+                sign = coeff > 0 ? '+' : '-';
+            } else {
+                 sign = coeff > 0 ? '' : '-';
+            }
+            const absCoeff = Math.abs(coeff);
+            let coeffStr = absCoeff === 1 && variable !== '' ? '' : absCoeff.toFixed(4).replace(/\.0+$/, '');
+            return `${sign}${coeffStr}${variable}`;
+        }
+
+        function showMessageBox(message) {
+            const box = document.getElementById('messageBox');
+            box.textContent = message;
+            box.classList.remove('hidden');
+        }
+
+        function hideMessageBox() {
+            document.getElementById('messageBox').classList.add('hidden');
+        }
+
+        // --- Tab Switching Logic ---
+        function switchTab(tabId) {
+            document.getElementById('polynomialTab').classList.add('hidden');
+            document.getElementById('linearTab').classList.add('hidden');
+            
+            const targetTab = document.getElementById(tabId);
+            if (targetTab) {
+                targetTab.classList.remove('hidden');
+            }
+            
+            // Update button styles
+            [document.getElementById('polyTabButton'), document.getElementById('linearTabButton')].forEach(button => {
+                if (!button) return;
+                
+                if (button.id === (tabId + 'Button')) {
+                    button.classList.remove('bg-gray-100', 'text-gray-500', 'hover:bg-gray-200');
+                    button.classList.add('bg-primary-blue', 'text-white', 'shadow-lg');
+                } else {
+                    button.classList.remove('bg-primary-blue', 'text-white', 'shadow-lg');
+                    button.classList.add('bg-gray-100', 'text-gray-500', 'hover:bg-gray-200');
+                }
+            });
+            
+            // Re-run analysis/draw graph on tab switch
+            if (tabId === 'polynomialTab' && typeof analyzePolynomial === 'function' && inputElement.value) {
+                 analyzePolynomial();
+            } else if (tabId === 'linearTab' && typeof runAllAlgebraicMethods === 'function' && a1AlgInput.value) {
+                runAllAlgebraicMethods();
+            }
+            
+            // Re-render MathJax
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        // Initialize script
+        window.onload = function() {
+            // Load MathJax for LaTeX rendering
+            const mathJaxScript = document.createElement('script');
+            mathJaxScript.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+            mathJaxScript.async = true;
+            document.head.appendChild(mathJaxScript);
+
+            // Set up initial state after DOM load and MathJax loading starts
+            setTimeout(() => {
+                switchTab('polynomialTab'); 
+                if(typeof analyzePolynomial === 'function') {
+                    analyzePolynomial();
+                }
+            }, 500); 
+        };
+    </script>
+</body>
+</html>
