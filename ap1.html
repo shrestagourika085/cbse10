@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arithmetic Progression (AP) Solver</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load KaTeX CSS for mathematical formulas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+    <!-- Load KaTeX JS -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"
+        onload="renderMathInElement(document.body, { delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+
+    <style>
+        /* Custom styles for better readability and aesthetics */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fc;
+        }
+        .container {
+            max-width: 900px;
+        }
+        .card {
+            background-color: white;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        input[type="number"], input[type="text"] {
+            border: 1px solid #cbd5e1;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: border-color 0.3s;
+        }
+        input[type="number"]:focus, input[type="text"]:focus {
+            border-color: #4f46e5;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+        /* Tab styles removed as they are no longer necessary for navigation */
+        .math-block {
+            padding: 1rem;
+            background-color: #eef2ff;
+            border-left: 5px solid #4f46e5;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+    <div class="container mx-auto">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-extrabold text-indigo-700 mb-2">Arithmetic Progression Solver</h1>
+            <p class="text-lg text-gray-600">Analyze, calculate, and generate AP sequences with ease in one place.</p>
+        </header>
+
+        <!-- Merged Content Area -->
+        <div id="apContent" class="card p-6 rounded-lg shadow-lg">
+
+            <!-- 1. Theory & Formulas Section -->
+            <h2 class="text-3xl font-bold text-gray-800 mb-6 text-indigo-700 border-b pb-2">1. AP Theory and Key Formulas</h2>
+
+            <div class="math-block">
+                <h3 class="font-bold text-lg mb-2 text-indigo-700">General Form of an AP</h3>
+                <p>An Arithmetic Progression (AP) is a sequence of numbers such that the difference between the consecutive terms is constant. This constant difference is called the **Common Difference ($d$)**.</p>
+                <p class="mt-2">$$a_1, a_1 + d, a_1 + 2d, a_1 + 3d, \dots$$</p>
+            </div>
+
+            <div class="math-block">
+                <h3 class="font-bold text-lg mb-2 text-indigo-700">$n^{th}$ Term (General Equation)</h3>
+                <p>The formula to find the $n^{th}$ term ($a_n$) or the last term ($l$) of an AP:</p>
+                <p class="mt-2">$$a_n = a_1 + (n-1)d$$</p>
+                <p>Where: $a_n$ is the $n^{th}$ term, $a_1$ is the first term, $n$ is the number of terms, and $d$ is the common difference.</p>
+            </div>
+
+            <div class="math-block">
+                <h3 class="font-bold text-lg mb-2 text-indigo-700">Sum of the First $n$ Terms</h3>
+                <p>The sum of the first $n$ terms ($S_n$) of an AP can be found using two main formulas:</p>
+                <p class="mt-2">$$S_n = \frac{n}{2} [2a_1 + (n-1)d]$$</p>
+                <p>Or, if the last term ($l$ or $a_n$) is known:</p>
+                <p class="mt-2">$$S_n = \frac{n}{2} (a_1 + l)$$</p>
+            </div>
+
+            <div class="math-block">
+                <h3 class="font-bold text-lg mb-2 text-indigo-700">Middle Term of an AP</h3>
+                <p>If the number of terms ($n$) is odd, the middle term is $a_{\frac{n+1}{2}}$.</p>
+                <p>If $n$ is even, there are two middle terms: $a_{\frac{n}{2}}$ and $a_{\frac{n}{2}+1}$.</p>
+            </div>
+
+            <hr class="my-8 border-gray-300">
+
+            <!-- 2. AP Checker & Properties Section -->
+            <h2 class="text-3xl font-bold text-gray-800 mb-6 text-indigo-700 border-b pb-2">2. AP Sequence Analyzer (Checker)</h2>
+            <div class="mb-4">
+                <label for="sequenceInput" class="block text-gray-700 font-medium mb-1">Enter Sequence (Comma-Separated Numbers):</label>
+                <input type="text" id="sequenceInput" placeholder="e.g., 2, 5, 8, 11, 14" class="w-full">
+            </div>
+            <button onclick="checkAP()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200">
+                Check Sequence
+            </button>
+            <div id="checkerResult" class="mt-4 p-4 rounded-lg bg-gray-50 border border-gray-200 min-h-24">
+                <p class="text-gray-500">Enter a sequence above to check if it's an AP and find its properties.</p>
+            </div>
+
+            <hr class="my-8 border-gray-300">
+
+            <!-- 3. AP Solver & Generator Section -->
+            <h2 class="text-3xl font-bold text-gray-800 mb-6 text-indigo-700 border-b pb-2">3. AP Solver and Sequence Generator</h2>
+            <p class="text-gray-600 mb-4">Use the inputs below to calculate missing values or generate a sequence. Leave the value you want to find or generate blank.</p>
+            
+            <!-- Unified Input Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+                <div>
+                    <label for="calcA1" class="block text-gray-700 font-medium mb-1">First Term ($a_1$):</label>
+                    <input type="number" id="calcA1" placeholder="a1" class="w-full">
+                </div>
+                <div>
+                    <label for="calcD" class="block text-gray-700 font-medium mb-1">Common Difference ($d$):</label>
+                    <input type="number" id="calcD" placeholder="d" class="w-full">
+                </div>
+                <div>
+                    <label for="calcN" class="block text-gray-700 font-medium mb-1">Term Index ($n$):</label>
+                    <input type="number" id="calcN" placeholder="n" class="w-full">
+                </div>
+                <div>
+                    <label for="calcAn" class="block text-gray-700 font-medium mb-1">$n^{th}$ Term ($a_n$ or $l$):</label>
+                    <input type="number" id="calcAn" placeholder="a_n" class="w-full">
+                </div>
+                <div>
+                    <label for="genCount" class="block text-gray-700 font-medium mb-1">Terms to Generate (K):</label>
+                    <input type="number" id="genCount" placeholder="Max 20" value="" class="w-full">
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label for="calcSn" class="block text-gray-700 font-medium mb-1">Sum of $n$ Terms ($S_n$):</label>
+                <input type="number" id="calcSn" placeholder="S_n" class="w-full max-w-sm">
+            </div>
+
+            <!-- Calculation Buttons -->
+            <h3 class="text-xl font-semibold text-gray-700 mb-3 border-b pb-1">Calculation Tools (Find Missing Values)</h3>
+            <div class="flex flex-wrap gap-3 mb-6">
+                <button onclick="calculateNthTerm()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200">
+                    Find $a_n$ (Need $a_1, d, n$)
+                </button>
+                <button onclick="calculateFirstTerm()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200">
+                    Find $a_1$ (Need $a_n, d, n$)
+                </button>
+                <button onclick="calculateCommonDifference()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200">
+                    Find $d$ (Need $a_1, a_n, n$)
+                </button>
+                <button onclick="calculateNumberOfTerms()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200">
+                    Find $n$ (Need $a_1, a_n, d$)
+                </button>
+                <button onclick="calculateSum()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200">
+                    Find Sum $S_n$ (Need $a_1, d, n$ or $a_1, a_n, n$)
+                </button>
+                <button onclick="calculateMiddleTerm()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200">
+                    Find Middle Term(s) (Need $a_1, d, n$)
+                </button>
+            </div>
+
+            <!-- Generator Button -->
+            <h3 class="text-xl font-semibold text-gray-700 mb-3 border-b pb-1">Sequence Generator</h3>
+            <button onclick="generateSequence()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200">
+                Generate AP (Need $a_1, d$, and Terms to Generate)
+            </button>
+            
+            <div id="calcResult" class="mt-4 p-4 rounded-lg bg-gray-50 border border-gray-200 min-h-24">
+                <p class="text-gray-500">Results will appear here.</p>
+            </div>
+        </div>
+
+        <!-- Custom Alert/Message Box -->
+        <div id="messageBox" class="fixed top-0 left-1/2 transform -translate-x-1/2 mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg shadow-lg z-50 hidden" role="alert">
+            <span id="messageText"></span>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Utility Functions ---
+
+        /** Shows a custom message box instead of using alert() */
+        function showMessage(text) {
+            const msgBox = document.getElementById('messageBox');
+            const msgText = document.getElementById('messageText');
+            msgText.textContent = text;
+            msgBox.classList.remove('hidden');
+            setTimeout(() => {
+                msgBox.classList.add('hidden');
+            }, 3000);
+        }
+
+        /** Parses a comma-separated string into an array of numbers. */
+        function parseSequence(inputString) {
+            const parts = inputString.split(',').map(s => s.trim()).filter(s => s.length > 0);
+            if (parts.length < 2) {
+                return null;
+            }
+            // Use parseFloat to handle non-integers
+            return parts.map(Number);
+        }
+
+        // --- AP Checker & Analyzer Functions ---
+
+        function checkAP() {
+            const input = document.getElementById('sequenceInput').value;
+            const resultDiv = document.getElementById('checkerResult');
+            const sequence = parseSequence(input);
+
+            if (!sequence || sequence.length < 2) {
+                resultDiv.innerHTML = '<p class="text-red-600">Please enter at least two comma-separated numbers.</p>';
+                return;
+            }
+
+            if (sequence.some(isNaN)) {
+                resultDiv.innerHTML = '<p class="text-red-600">The sequence must contain only valid numbers.</p>';
+                return;
+            }
+
+            let isAP = true;
+            let commonDifference = null;
+            const differences = [];
+
+            for (let i = 1; i < sequence.length; i++) {
+                const diff = sequence[i] - sequence[i - 1];
+                differences.push(diff);
+
+                if (commonDifference === null) {
+                    commonDifference = diff;
+                } else if (Math.abs(diff - commonDifference) > 1e-9) { // Use tolerance for floating point numbers
+                    isAP = false;
+                    break;
+                }
+            }
+            
+            let html = '';
+            
+            if (isAP) {
+                const a1 = sequence[0];
+                const n = sequence.length;
+                const lastTerm = sequence[n - 1];
+                
+                // Calculate Middle Term(s)
+                let middleTermText = '';
+                if (n % 2 !== 0) {
+                    const midIndex = (n - 1) / 2;
+                    const midValue = sequence[midIndex];
+                    middleTermText = `The middle term (position ${midIndex + 1}) is: <strong>${midValue}</strong>`;
+                } else {
+                    const midIndex1 = n / 2 - 1;
+                    const midIndex2 = n / 2;
+                    const midValue1 = sequence[midIndex1];
+                    const midValue2 = sequence[midIndex2];
+                    middleTermText = `The two middle terms (positions ${midIndex1 + 1} and ${midIndex2 + 1}) are: <strong>${midValue1}</strong> and <strong>${midValue2}</strong>`;
+                }
+
+                html += `
+                    <p class="text-green-600 font-bold text-xl mb-3">✅ The sequence is an Arithmetic Progression (AP)!</p>
+                    <ul class="list-disc list-inside space-y-1 text-gray-700">
+                        <li>Number of Terms ($n$): <strong>${n}</strong></li>
+                        <li>First Term ($a_1$): <strong>${a1}</strong></li>
+                        <li>Common Difference ($d$): <strong>${commonDifference.toFixed(4)}</strong></li>
+                        <li>Last Term ($a_n$ or $l$): <strong>${lastTerm}</strong></li>
+                        <li>${middleTermText}</li>
+                        <li>General Equation: $a_n = ${a1} + (n-1)(${commonDifference.toFixed(4)})$</li>
+                    </ul>
+                `;
+
+            } else {
+                html += `
+                    <p class="text-red-600 font-bold text-xl mb-3">❌ The sequence is NOT an Arithmetic Progression.</p>
+                    <p class="text-gray-700">Differences between consecutive terms:</p>
+                    <ul class="list-disc list-inside text-gray-700">
+                        ${differences.map((d, i) => `<li>Term ${i + 2} - Term ${i + 1}: ${d.toFixed(4)}</li>`).join('')}
+                    </ul>
+                    <p class="mt-2 text-red-600">The differences are not constant.</p>
+                `;
+            }
+
+            resultDiv.innerHTML = html;
+            // Re-render KaTeX content for the result section
+            renderMathInElement(resultDiv, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false }
+                ]
+            });
+        }
+
+        // --- AP Solver Functions (New/Updated) ---
+
+        function calculateNthTerm() {
+            const a1 = parseFloat(document.getElementById('calcA1').value);
+            const d = parseFloat(document.getElementById('calcD').value);
+            const n = parseInt(document.getElementById('calcN').value, 10);
+            const resultDiv = document.getElementById('calcResult');
+
+            if (isNaN(a1) || isNaN(d) || isNaN(n) || n < 1) {
+                showMessage("To find $a_n$, please enter valid numbers for the First Term ($a_1$), Common Difference ($d$), and Term Index ($n$).");
+                return;
+            }
+
+            // a_n = a_1 + (n-1)d
+            const an = a1 + (n - 1) * d;
+            
+            const html = `
+                <p class="text-blue-600 font-bold text-xl mb-3">The $n^{th}$ Term ($a_n$ or Last Term) Result</p>
+                <ul class="list-disc list-inside space-y-1 text-gray-700">
+                    <li>$a_1 = ${a1}$</li>
+                    <li>$d = ${d}$</li>
+                    <li>$n = ${n}$</li>
+                    <li>Formula: $a_n = a_1 + (n-1)d$</li>
+                    <li>Calculation: $a_${n} = ${a1} + (${n}-1) \cdot ${d} = <strong>${an.toFixed(4)}</strong></li>
+                </ul>
+            `;
+            resultDiv.innerHTML = html;
+            renderMathInElement(resultDiv);
+        }
+
+        // Find a1 given an, d, n
+        function calculateFirstTerm() {
+            const an = parseFloat(document.getElementById('calcAn').value);
+            const d = parseFloat(document.getElementById('calcD').value);
+            const n = parseInt(document.getElementById('calcN').value, 10);
+            const resultDiv = document.getElementById('calcResult');
+
+            if (isNaN(an) || isNaN(d) || isNaN(n) || n < 2) {
+                showMessage("To find the First Term ($a_1$), please enter valid numbers for the $n^{th}$ Term ($a_n$), Common Difference ($d$), and Term Index ($n > 1$).");
+                return;
+            }
+            
+            // a_1 = a_n - (n-1)d
+            const a1 = an - (n - 1) * d;
+            
+            const html = `
+                <p class="text-blue-600 font-bold text-xl mb-3">The First Term ($a_1$) Result</p>
+                <ul class="list-disc list-inside space-y-1 text-gray-700">
+                    <li>$a_n = ${an}$</li>
+                    <li>$d = ${d}$</li>
+                    <li>$n = ${n}$</li>
+                    <li>Formula: $a_1 = a_n - (n-1)d$</li>
+                    <li>Calculation: $a_1 = ${an} - (${n}-1) \cdot ${d} = <strong>${a1.toFixed(4)}</strong></li>
+                </ul>
+            `;
+            resultDiv.innerHTML = html;
+            renderMathInElement(resultDiv);
+        }
+
+        // Find d given a1, an, n
+        function calculateCommonDifference() {
+            const a1 = parseFloat(document.getElementById('calcA1').value);
+            const an = parseFloat(document.getElementById('calcAn').value);
+            const n = parseInt(document.getElementById('calcN').value, 10);
+            const resultDiv = document.getElementById('calcResult');
+
+            if (isNaN(a1) || isNaN(an) || isNaN(n) || n < 2) {
+                showMessage("To find the Common Difference ($d$), please enter valid numbers for the First Term ($a_1$), $n^{th}$ Term ($a_n$), and Term Index ($n > 1$).");
+                return;
+            }
+
+            // d = (a_n - a_1) / (n-1)
+            const d = (an - a1) / (n - 1);
+            
+            const html = `
+                <p class="text-blue-600 font-bold text-xl mb-3">The Common Difference ($d$) Result</p>
+                <ul class="list-disc list-inside space-y-1 text-gray-700">
+                    <li>$a_1 = ${a1}$</li>
+                    <li>$a_n = ${an}$</li>
+                    <li>$n = ${n}$</li>
+                    <li>Formula: $d = \\frac{a_n - a_1}{n-1}$</li>
+                    <li>Calculation: $d = \\frac{${an} - ${a1}}{${n}-1} = <strong>${d.toFixed(4)}</strong></li>
+                </ul>
+            `;
+            resultDiv.innerHTML = html;
+            renderMathInElement(resultDiv);
+        }
+        
+        // Find n given a1, an, d
+        function calculateNumberOfTerms() {
+            const a1 = parseFloat(document.getElementById('calcA1').value);
+            const an = parseFloat(document.getElementById('calcAn').value);
+            const d = parseFloat(document.getElementById('calcD').value);
+            const resultDiv = document.getElementById('calcResult');
+
+            if (isNaN(a1) || isNaN(an) || isNaN(d) || d === 0) {
+                 showMessage("To find the Number of Terms ($n$), please enter valid numbers for $a_1$, $a_n$, and a non-zero Common Difference ($d$).");
+                return;
+            }
+
+            // n = ((a_n - a_1) / d) + 1
+            const nFloat = ((an - a1) / d) + 1;
+            
+            let html = `<p class="text-blue-600 font-bold text-xl mb-3">The Number of Terms ($n$) Result</p>`;
+            
+            // Check if n is an integer (AP term count must be an integer)
+            if (Math.abs(nFloat - Math.round(nFloat)) > 1e-9 || nFloat < 1) {
+                 html += `<p class="text-red-600">The calculated $n$ value (${nFloat.toFixed(4)}) is not a positive integer. The sequence defined by these values does not form a valid AP.</p>`;
+            } else {
+                const n = Math.round(nFloat);
+                html += `
+                    <ul class="list-disc list-inside space-y-1 text-gray-700">
+                        <li>$a_1 = ${a1}$</li>
+                        <li>$a_n = ${an}$</li>
+                        <li>$d = ${d}$</li>
+                        <li>Formula: $n = \\frac{a_n - a_1}{d} + 1$</li>
+                        <li>Calculation: $n = \\frac{${an} - ${a1}}{${d}} + 1 = <strong>${n}</strong></li>
+                    </ul>
+                `;
+            }
+            
+            resultDiv.innerHTML = html;
+            renderMathInElement(resultDiv);
+        }
+
+        function calculateSum() {
+            const a1 = parseFloat(document.getElementById('calcA1').value);
+            const d = parseFloat(document.getElementById('calcD').value);
+            const n = parseInt(document.getElementById('calcN').value, 10);
+            const an = parseFloat(document.getElementById('calcAn').value);
+            const resultDiv = document.getElementById('calcResult');
+            
+            let sum = NaN;
+            let formulaHtml = '';
+
+            // Case 1: Use a1, d, n
+            if (!isNaN(a1) && !isNaN(d) && !isNaN(n) && n >= 1) {
+                // S_n = n/2 * [2a_1 + (n-1)d]
+                sum = (n / 2) * (2 * a1 + (n - 1) * d);
+                formulaHtml = `Formula: $S_n = \\frac{n}{2} [2a_1 + (n-1)d]$`;
+            } 
+            // Case 2: Use a1, an, n
+            else if (!isNaN(a1) && !isNaN(an) && !isNaN(n) && n >= 1) {
+                // S_n = n/2 * (a_1 + a_n)
+                sum = (n / 2) * (a1 + an);
+                formulaHtml = `Formula: $S_n = \\frac{n}{2} (a_1 + a_n)$`;
+            } 
+            else {
+                showMessage("To find the Sum ($S_n$), please enter valid numbers for ($a_1, d, n$) OR ($a_1, a_n, n$).");
+                return;
+            }
+
+            const html = `
+                <p class="text-green-600 font-bold text-xl mb-3">The Sum of $n$ Terms ($S_n$) Result</p>
+                <ul class="list-disc list-inside space-y-1 text-gray-700">
+                    <li>$a_1 = ${a1}$</li>
+                    <li>$n = ${n}$</li>
+                    ${!isNaN(d) ? `<li>$d = ${d}$</li>` : ''}
+                    ${!isNaN(an) ? `<li>$a_n = ${an}$</li>` : ''}
+                    <li>${formulaHtml}</li>
+                    <li>Sum: <strong>${sum.toFixed(4)}</strong></li>
+                </ul>
+            `;
+            resultDiv.innerHTML = html;
+            renderMathInElement(resultDiv);
+        }
+
+        // Sequence Generator (Moved from old tab 4)
+        function generateSequence() {
+            const a1 = parseFloat(document.getElementById('calcA1').value);
+            const d = parseFloat(document.getElementById('calcD').value);
+            const count = parseInt(document.getElementById('genCount').value, 10);
+            const resultDiv = document.getElementById('calcResult');
+
+            if (isNaN(a1) || isNaN(d) || isNaN(count) || count < 1 || count > 20) {
+                showMessage('To generate an AP, please enter valid numbers for $a_1$, $d$, and a term count between 1 and 20.');
+                return;
+            }
+
+            const sequence = [];
+            for (let i = 0; i < count; i++) {
+                // a_n = a_1 + (n-1)d
+                const term = a1 + i * d;
+                sequence.push(term.toFixed(4)); // Keep 4 decimal places for display
+            }
+            
+            const html = `
+                <p class="text-red-600 font-bold text-xl mb-3">Generated AP Sequence</p>
+                <ul class="list-disc list-inside space-y-1 text-gray-700">
+                    <li>First Term ($a_1$): <strong>${a1}</strong></li>
+                    <li>Common Difference ($d$): <strong>${d}</strong></li>
+                    <li>Number of Terms Generated: <strong>${count}</strong></li>
+                </ul>
+                <div class="mt-4 p-3 bg-white border border-gray-300 rounded-lg overflow-x-auto font-mono text-sm">
+                    ${sequence.join(', ')}
+                </div>
+            `;
+            
+            resultDiv.innerHTML = html;
+        }
+
+        function calculateMiddleTerm() {
+            const a1 = parseFloat(document.getElementById('calcA1').value);
+            const d = parseFloat(document.getElementById('calcD').value);
+            const n = parseInt(document.getElementById('calcN').value, 10);
+            const resultDiv = document.getElementById('calcResult');
+
+            if (isNaN(a1) || isNaN(d) || isNaN(n) || n < 1) {
+                showMessage("To find the Middle Term(s), please enter valid numbers for the First Term ($a_1$), Common Difference ($d$), and Term Index ($n$).");
+                return;
+            }
+
+            if (n === 1) {
+                 const html = `<p class="text-purple-600 font-bold text-xl mb-3">Middle Term Result</p>
+                    <p class="text-gray-700">With $n=1$, the only term is $a_1$: <strong>${a1.toFixed(4)}</strong></p>`;
+                resultDiv.innerHTML = html;
+                return;
+            }
+            
+            let html = `<p class="text-purple-600 font-bold text-xl mb-3">Middle Term(s) Result (Based on $n=${n}$)</p><ul class="list-disc list-inside space-y-1 text-gray-700">`;
+            
+            if (n % 2 !== 0) {
+                // Odd number of terms
+                const pos = (n + 1) / 2;
+                // a_n = a_1 + (n-1)d
+                const middleValue = a1 + (pos - 1) * d;
+                html += `
+                    <li>Number of terms ($n$) is **Odd**.</li>
+                    <li>Middle Term Position: $\\frac{n+1}{2} = ${pos}$</li>
+                    <li>Middle Term Value ($a_{${pos}}$): <strong>${middleValue.toFixed(4)}</strong></li>
+                `;
+            } else {
+                // Even number of terms
+                const pos1 = n / 2;
+                const pos2 = n / 2 + 1;
+                
+                const middleValue1 = a1 + (pos1 - 1) * d;
+                const middleValue2 = a1 + (pos2 - 1) * d;
+
+                html += `
+                    <li>Number of terms ($n$) is **Even**.</li>
+                    <li>First Middle Term Position: $\\frac{n}{2} = ${pos1}$</li>
+                    <li>Second Middle Term Position: $\\frac{n}{2} + 1 = ${pos2}$</li>
+                    <li>Middle Term Values: <strong>$a_{${pos1}} = ${middleValue1.toFixed(4)}$</strong> and <strong>$a_{${pos2}} = ${middleValue2.toFixed(4)}$</strong></li>
+                `;
+            }
+            
+            html += `</ul>`;
+            resultDiv.innerHTML = html;
+            renderMathInElement(resultDiv);
+        }
+
+    </script>
+</body>
+</html>
